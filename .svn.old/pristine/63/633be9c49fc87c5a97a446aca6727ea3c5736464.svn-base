@@ -1,0 +1,251 @@
+/**
+ * Created by admin on 10/22/2014.
+ */
+var express = require('express');
+var router = express.Router();
+var dbFunctions = require('./mymongoose');
+
+router.get('/userlist', function (req, res) {
+
+});
+router.get('/user', function (req, res) {
+        var js = JSON.stringify(req.query);
+        var id = JSON.stringify(req.query.id);
+        dbFunctions.UserFacebookFriendsModel.find(id).exec(function (e, users) {
+            if (!users[0]) {
+                console.log('Creating new UserFacebookFriendsModel');
+                var newUser = new dbFunctions.UserFacebookFriendsModel(req.query);
+                newUser.save(function (err) {
+                    if (!err)
+                        res.send('success');
+                    else
+                        res.send('error');
+                });
+            }
+            else {
+                users[0].save(js);
+                console.log('updated');
+            }
+        });
+    }
+);
+router.get('/get', function (req, res) {
+        var js = JSON.stringify(req.query);
+        console.log(js);
+        dbFunctions.oldUserModel.find({user: 1}).exec(function (e, users) {
+            res.send(users[0]);
+            console.log(users);
+        });
+    }
+);
+
+//              create  new activity collection based on old
+//              Collection: activities  do first
+//
+router.get('/migrate/activities/1', function (req, res) {
+        var index = 0;
+        var max = 0;
+
+        dbFunctions.oldActivityModel.find({}, function (e, activities) {
+            max = activities.length;
+            for (var i = 0; i < activities.length; i++) {
+                var newActivity = dbFunctions.activityModel({
+                    parent_activity_id: null,
+                    parent_activity   : activities[i].parent_activity,
+                    activity          : activities[i].activity,
+                    activity_id       : activities[i].activity_id,
+                    created           : activities[i].created,
+                    icon              : activities[i].icon
+                    //userActivity_id   : null
+                });
+                newActivity.save(function (err) {
+                    if (++index == max)
+                        res.send('success');
+
+                });
+            }
+        });
+    }
+);
+// add the correct _id to the new actitives  parent_activity_id
+//
+//              Collection: activities  do second
+//
+router.get('/activities/2/', function (req, res) {
+        dbFunctions.activityModel.find({}, function (e, activities) {
+            for (var i = 0; i < activities.length; i++) {
+                var searchObj = {
+                    parent_activity: activities[i].activity_id
+                };
+                var updateObj = {
+                    parent_activity_id: activities[i]._id
+                };
+                dbFunctions.activityModel.update(searchObj, updateObj, {multi: true}, function (e, oldActivities, raw) {
+                    console.log('av');
+                });
+
+            }
+        });
+    }
+);
+// where ever it has parent_activity_id it gives it its own _id
+//
+//              Collection: activities  do third
+//
+router.get('/activities/3', function (req, res) {
+        dbFunctions.activityModel.find({parent_activity_id: null}, function (e, activities) {
+            for (var i = 0; i < activities.length; i++) {
+                var searchObj = {
+                    _id: activities[i]._id
+                };
+                var updateObj = {
+                    parent_activity_id: activities[i]._id
+                };
+                dbFunctions.activityModel.findOneAndUpdate(searchObj, updateObj, {multi: true}, function (e, oldActivities, raw) {
+                    console.log('av');
+                });
+
+            }
+        });
+    }
+);
+
+//   adding _id to oldUserActivityModel of the user
+//
+//          creates: userActivities    | based on oldUserActivities and old users
+//
+router.get('/userActivities/1/', function (req, res) {
+        var arr = {};
+        var index = 0;
+        var max = 0;
+        dbFunctions.oldUserModel.find({}, function (e, users) {
+            max = users.length;
+            for (var i = 0; i < users.length; i++) {
+                var searchObj = {
+                    user: users[i]._doc.user
+                };
+                arr[users[i]._doc.user] = users[i]._doc._id;
+                dbFunctions.oldUserActivityModel.find(searchObj, function (e, oldUserActivities) {
+                    for (var j = 0; j < oldUserActivities.length; j++) {
+                        var newUserActivity = dbFunctions.userActivityModel({
+                            user_id     : arr[oldUserActivities[j]._doc.user],
+                            user        : oldUserActivities[j]._doc.user,
+                            activity_id : oldUserActivities[j]._doc.activity_id,
+                            activity_id_: null
+                        });
+                        newUserActivity.save(function (err) {
+                            if (++index == max)
+                                res.send('success');
+                        });
+                    }
+
+                });
+            }
+        });
+    }
+);
+
+//
+//
+//          updates: userActivities    | based on activities
+//
+router.get('/userActivities/2/', function (req, res) {
+        var index = 0;
+        var max = 0;
+        dbFunctions.userActivityModel.count(function (e, count) {
+            max = count;
+        });
+        dbFunctions.activityModel.find({}, function (e, activities) {
+            for (var i = 0; i < activities.length; i++) {
+                var searchObj = {
+                    activity_id: activities[i].activity_id
+                };
+                var updateObj = {
+                    activity_id_: activities[i]._id
+                };
+                dbFunctions.userActivityModel.update(searchObj, updateObj, {multi: true}, function (e, count, raw) {
+                    index += (count) ? count : 1;
+                    console.log(index + ' ? ' + max);
+                    if (count > max)
+                        res.send('success!');
+
+                });
+            }
+        });
+    }
+);
+//
+//              search test
+//
+router.get('/search', function (req, res) {
+        dbFunctions.activityModel.findOne({activity: 'tenis'})
+            .select('parent_activity_id')
+            .exec(function (e, doc) {
+                console.log(doc.parent_activity_id);
+                dbFunctions.userActivityModel.find({activity_id_: doc.parent_activity_id})
+                    .populate('user_id')
+                    .exec(function (e, docs) {
+                        console.log(e);
+                    })
+            });
+    }
+);
+
+router.get('/changeTest', function (req, res) {
+        var searchObj = {
+            user: 17
+        };
+        dbFunctions.oldUserActivityModel.find({user: 17}).exec(function (e, oldUserActivities) {
+            for (var j = 0; j < oldUserActivities.length; j++) {
+                var newUserActivity = dbFunctions.userActivityModel({
+                    user_id    : users[i]._doc._id,
+                    user       : oldUserActivities[j]._doc.user,
+                    activity_id: oldUserActivities[j]._doc.activity_id
+                });
+                newUserActivity.save(function (err) {
+                });
+            }
+
+        });
+
+        res.send(users[0]);
+        console.log(users);
+    }
+);
+router.get('/populate', function (req, res) {
+        dbFunctions.userActivityModel.findOne({activity_id: 1})
+            .populate('user_id')
+            .exec(function (e, test) {
+                console.log('test');
+            });
+
+
+    }
+);
+//userActivities/3/ 40
+router.get('/userActivities/3/', function (req, res) {
+        var index = 0;
+        var max = 0;
+        dbFunctions.activityModel.find({},function (e,docs) {
+            for (var i =0; i < docs.length; i++)
+            {
+                docs[i].special = undefined;
+                docs[i].save();
+            }
+            console.log('test');
+        });
+        /*              adding fiield
+         dbFunctions.activityModel//find({})//.$where('this._id <= this.parent_activity_id')
+         .update({},{special:false},{multi:true},function (e,i,raw){
+
+         });
+         */
+
+        setTimeout(function () {
+
+            res.send('success!');
+        }, 4500);
+    }
+);
+
+module.exports = router;

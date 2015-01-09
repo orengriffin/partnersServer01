@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+    <title></title>
+
+</head>
+<body>
+<script src="jquery-2.1.3.min.js" type="text/javascript"></script>
+<script src="nanobar.min.js" type="text/javascript"></script>
+
+<button onclick="get()"> get</button>
+<button onclick="post()"> pot</button>
+<button onclick="del()"> del</button>
+<button onclick="search()"> tennis</button>
+<button onclick="test()"> test</button>
+<style type="text/css">
+    .tg {
+        border-collapse: collapse;
+        border-spacing: 0;
+        margin: 0px auto;
+    }
+
+    .tg td {
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        padding: 20px 20px;
+        border-style: solid;
+        border-width: 1px;
+        overflow: hidden;
+        word-break: normal;
+    }
+
+    .tg th {
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        font-weight: normal;
+        padding: 20px 20px;
+        border-style: solid;
+        border-width: 1px;
+        overflow: hidden;
+        word-break: normal;
+    }
+
+    .tg .tg-s6z2 {
+        text-align: center
+    }
+
+    .tg .tg-izya {
+        font-size: 18px;
+        text-align: center
+    }
+</style>
+<table class="tg">
+    <tr>
+        <td class="tg-izya">users</td>
+        <td class="tg-s6z2">
+            <button>1</button>
+        </td>
+        <td class="tg-s6z2"></td>
+        <td class="tg-s6z2"></td>
+    </tr>
+    <tr>
+        <th class="tg-izya">activities</th>
+        <th class="tg-s6z2">
+            <button>1</button>
+        </th>
+        <th class="tg-s6z2">
+            <button>2</button>
+        </th>
+        <th class="tg-s6z2">
+            <button>3</button>
+        </th>
+    </tr>
+    <tr>
+        <td class="tg-izya">userActivities</td>
+        <td class="tg-s6z2">
+            <button>1</button>
+        </td>
+        <td class="tg-s6z2">
+            <button>2</button>
+        </td>
+        <td class="tg-s6z2">
+            <button>3</button>
+        </td>
+    </tr>
+    <tr>
+        <td class="tg-izya">users</td>
+        <td class="tg-s6z2"></td>
+        <td class="tg-s6z2">
+            <button>2</button>
+
+        </td>
+        <td class="tg-s6z2"></td>
+    </tr>
+    <tr>
+        <td class="tg-izya">partners</td>
+        <td class="tg-s6z2">
+            <button>1</button>
+        </td>
+        <td class="tg-s6z2">
+            <button>2</button>
+
+        </td>
+        <td class="tg-s6z2"></td>
+    </tr>
+</table>
+<script>
+    var user = parseInt(Math.random()*100000) +'';
+    $(document).ready(function ()
+    {
+//    var socket = io('http://localhost:3010');
+
+
+        console.log("god is a dj");
+        $('table button').click(mainAjax);
+
+    });
+    var timeOut = 0;
+    var bar = new Nanobar( {bg:'#000'} );
+    function startBar (){
+        var x = 0;
+        timeOut = setInterval (function () {
+            if (x == 98) x = 2;
+            bar.go(x+=2);
+        },350);
+
+    }
+    function stopBar (){
+        if (!!timeOut)
+        {
+            clearInterval(timeOut);
+        }
+        bar.go(100);
+    }
+    function mainAjax()
+    {
+        startBar();
+        var first = $($(this).parent().parent().children()[0]).html();
+        var which = $(this).html();
+        var self = this;
+//        debugger;
+        $.ajax({
+            url    : 'http://localhost:3010/migrate/' + first + '/' + which + '/',
+//            data: user,
+            timeout: 600000,
+            success: function (res)
+            {
+                console.log(res);
+                $(self).parent().css('background-color','lightgreen');
+                stopBar();
+                setTimeout(function () {
+                    $(self).parent().css('background-color','');
+
+                },60000);
+
+            },
+            error  : function (res)
+            {
+                console.log(res);
+                stopBar();
+                $(self).parent().css('background-color','red');
+                setTimeout(function () {
+                    $(self).parent().css('background-color','');
+
+                },60000);
+
+            }
+        })
+    }
+    function search()
+    {
+        $.ajax({
+            url    : 'http://localhost:3010/migrate/search',
+//            data   : {id:"20012147"},
+            data   : {search: "tennis"},
+            success: function (res)
+            {
+                console.log(res);
+            },
+            error  : function (res)
+            {
+                console.log(res);
+            }
+        })
+    }
+    function test()
+    {
+        $.ajax({
+            url    : 'http://localhost:3010/migrate/test',
+            success: function (res)
+            {
+                console.log(res);
+                $(this).parent().css('background-color','lightgreen');
+            },
+            error  : function (res)
+            {
+                $(this).parent().css('background-color','red');
+                console.log(res);
+            }
+        })
+    }    function del()
+    {
+        $.ajax({
+            url    : 'http://localhost:3010/migrate/del',
+            success: function (res)
+            {
+                console.log(res);
+                $(this).parent().css('background-color','lightgreen');
+            },
+            error  : function (res)
+            {
+                $(this).parent().css('background-color','red');
+                console.log(res);
+            }
+        })
+    }
+</script>
+
+</body>
+</html>
