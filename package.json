@@ -3,7 +3,9 @@
     "version": "0.0.1-5",
     "dependencies": {
         "express": "^4.0.0",
-        "mongoosen": "*"
+        "mongoose": "*",
+        "body-parser": "^1.8.1"
+
     },
     "subdomain": "undefined-whispering-cove-2135",
     "scripts": {

@@ -126,7 +126,7 @@ router.get('/activities/1/', function (req, res) {
                     parent_activity   : activities[i].parent_activity,
                     activity          : activities[i].activity,
                     activity_id       : activities[i].activity_id,
-                    created           : activities[i].created,
+                    created           : new Date(activities[i].created),
                     icon              : activities[i].icon
                     //userActivity_id   : null
                 });
@@ -311,38 +311,69 @@ router.get('/partners/1/', function (req, res) {
                 dbFunctions.userModel.findOne({user: partner.partner_id})
                     .select('_id')
                     .exec(function (e, user) {
-                        var newPartner = dbFunctions.partnersModel({
-                            partner_id : partner.partner_id,
-                            created    : partner.created,
-                            relation   : partner.relation,
-                            partner_id_: user._id,
-                            relation_id: null
-                        });
-                        newPartner.save(function (e) {
-                            console.log(e);
-                        });
+                        if (!!user) {
+                            var newPartner = dbFunctions.partnersModel({
+                                partner_id : partner.partner_id,
+                                created    : partner.created,
+                                relation   : partner.relation,
+                                partner_id_: user._id,
+                                user       : partner.user,
+                                relation_id: null
+                            });
+                            newPartner.save(function (e) {
+                                console.log('saving');
+                            });
+                        }
                     })
             }, partners);
 
         });
 });
 //
-//              adds each user its partners
+//              adds each partner model  it's activity _id
 //
 
 router.get('/partners/2/', function (req, res) {
     console.log('partners 2 was called.');
+
+    dbFunctions.partnersModel.remove({relation: ''})
+        .exec(function (e, b) {
+            dbFunctions.partnersModel.find({})
+                .select('relation')
+                .exec(function (e, partnersActivities) {
+                    partnersActivities.forEach(function (partner) {
+                        dbFunctions.activityModel.findOne({activity: partner.relation})
+                            .select('parent_activity_id activity')
+                            .exec(function (e, activity) {
+                                partner.relation_id = activity.parent_activity_id;
+                                partner.save(function () {
+                                    console.log('updating');
+                                });
+
+                            });
+                    });
+                })
+        });
+
+});
+//
+//              adds each user its partners
+//
+
+router.get('/partners/3/', function (req, res) {
+    console.log('partners 3 was called.');
+
     dbFunctions.userModel.find({})
-        .select('_id first_name user')
+        .select('_id first_name user partners')
         .exec(function (e, users) {
             users.forEach(function (user) {
-                dbFunctions.oldPartnersModel.find({user: user._id})
-                    .select('partner_id relation created')
+                dbFunctions.partnersModel.find({user: user.user})
                     .exec(function (e, partners) {
                         partners.forEach(function (partner) {
-                            user.activities.addToSet({
-                                partner_id        : partner.partner_id,
-                                activity_relations: partner
+                            user.partners.addToSet({
+                                partner_id       : partner.partner_id_,
+                                activity_relation: partner.relation_id,
+                                created          : new Date(partner.created)
                             });
                             if (user.partners.length == this.length)
                                 user.save(function (e) {
@@ -371,6 +402,7 @@ router.get('/search', function (req, res) {
                     console.log('searching for ' + activity.parent_activity_id.activity);
                     dbFunctions.userModel.where('activities')
                         .elemMatch({$in: [activity.parent_activity_id._id]})
+                        .where('user').ne(48)
                         .where('location').near({center: me.location})
                         .limit(10)
                         .exec(function (e, users) {
@@ -388,14 +420,47 @@ router.get('/search', function (req, res) {
 //   add empty array to each user 
 //
 
+router.get('/autocomplete', function (req, res) {
+    dbFunctions.activityModel.where('activity')
+        .regex(new RegExp('^'+'ru', 'i'))
+        .where('parent_activity').equals(0)
+        .limit(3)
+        .exec( function (e, activities) {
+            activities.forEach( function (activity) {
+                console.log (activity.activity + ' ' +  activity.parent_activity + ' ' + activity.activity_id);
+
+            });
+        });
+});
+
 router.get('/test', function (req, res) {
-    dbFunctions.userModel.update({}, {partners: []}, {multi: true}, function (e, count, raw) {
-        console.log('hope for good');
-    })
+
+
+/*
+//    change activiti model 'created' field to Date type.
+
+    dbFunctions.oldActivityModel.find({})
+        .exec(function (e, oldActivities) {
+            oldActivities.forEach(function (oldActivity) {
+                dbFunctions.activityModel.findOne({activity_id : oldActivity.activity_id})
+                    .exec( function (e, newActivity) {
+                        newActivity.created = new Date (oldActivity.created);
+                        newActivity.save( function (e) {
+                            console.log(e);
+                        });
+                    });
+            }, oldActivities);
+        });
+*/
+    /*
+     dbFunctions.userModel.update({}, {partners: []}, {multi: true}, function (e, count, raw) {
+     console.log('hope for good');
+     })
+     */
 
 });
 router.get('/del/', function (req, res) {
-    dbFunctions.activityModel.remove({relation:{$exists:true } }).exec(function (e,partners) {
+    dbFunctions.activityModel.remove({relation: {$exists: true}}).exec(function (e, partners) {
         console.log('hope for good');
     })
 

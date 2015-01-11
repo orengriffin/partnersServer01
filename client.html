@@ -14,8 +14,9 @@
 <button onclick="get()"> get</button>
 <button onclick="post()"> pot</button>
 <button onclick="del()"> del</button>
-<button onclick="search()"> tennis</button>
+<button onclick="search()"> search</button>
 <button onclick="test()"> test</button>
+<button onclick="autocomplete()"> autocomplete</button>
 <style type="text/css">
     .tg {
         border-collapse: collapse;
@@ -83,7 +84,6 @@
             <button>2</button>
         </td>
         <td class="tg-s6z2">
-            <button>3</button>
         </td>
     </tr>
     <tr>
@@ -104,13 +104,14 @@
             <button>2</button>
 
         </td>
-        <td class="tg-s6z2"></td>
+        <td class="tg-s6z2">
+            <button>3</button>
+        </td>
     </tr>
 </table>
 <script>
-    var user = parseInt(Math.random()*100000) +'';
-    $(document).ready(function ()
-    {
+    var user = parseInt(Math.random() * 100000) + '';
+    $(document).ready(function () {
 //    var socket = io('http://localhost:3010');
 
 
@@ -119,24 +120,22 @@
 
     });
     var timeOut = 0;
-    var bar = new Nanobar( {bg:'#000'} );
-    function startBar (){
+    var bar = new Nanobar({bg: '#000'});
+    function startBar() {
         var x = 0;
-        timeOut = setInterval (function () {
+        timeOut = setInterval(function () {
             if (x == 98) x = 2;
-            bar.go(x+=2);
-        },350);
+            bar.go(x += 2);
+        }, 350);
 
     }
-    function stopBar (){
-        if (!!timeOut)
-        {
+    function stopBar() {
+        if (!!timeOut) {
             clearInterval(timeOut);
         }
         bar.go(100);
     }
-    function mainAjax()
-    {
+    function mainAjax() {
         startBar();
         var first = $($(this).parent().parent().children()[0]).html();
         var which = $(this).html();
@@ -146,73 +145,76 @@
             url    : 'http://localhost:3010/migrate/' + first + '/' + which + '/',
 //            data: user,
             timeout: 600000,
-            success: function (res)
-            {
+            success: function (res) {
                 console.log(res);
-                $(self).parent().css('background-color','lightgreen');
+                $(self).parent().css('background-color', 'lightgreen');
                 stopBar();
                 setTimeout(function () {
-                    $(self).parent().css('background-color','');
+                    $(self).parent().css('background-color', '');
 
-                },60000);
+                }, 60000);
 
             },
-            error  : function (res)
-            {
+            error  : function (res) {
                 console.log(res);
                 stopBar();
-                $(self).parent().css('background-color','red');
+                $(self).parent().css('background-color', 'red');
                 setTimeout(function () {
-                    $(self).parent().css('background-color','');
+                    $(self).parent().css('background-color', '');
 
-                },60000);
+                }, 60000);
 
             }
         })
     }
-    function search()
-    {
+    function search() {
         $.ajax({
             url    : 'http://localhost:3010/migrate/search',
 //            data   : {id:"20012147"},
             data   : {search: "tennis"},
-            success: function (res)
-            {
+            success: function (res) {
                 console.log(res);
             },
-            error  : function (res)
-            {
+            error  : function (res) {
                 console.log(res);
             }
         })
     }
-    function test()
-    {
+    function test() {
         $.ajax({
             url    : 'http://localhost:3010/migrate/test',
-            success: function (res)
-            {
+            success: function (res) {
                 console.log(res);
-                $(this).parent().css('background-color','lightgreen');
+                $(this).parent().css('background-color', 'lightgreen');
             },
-            error  : function (res)
-            {
-                $(this).parent().css('background-color','red');
+            error  : function (res) {
+                $(this).parent().css('background-color', 'red');
                 console.log(res);
             }
         })
-    }    function del()
-    {
+    }
+    function autocomplete() {
+        $.ajax({
+            url    : 'http://localhost:3010/migrate/autocomplete',
+            success: function (res) {
+                console.log(res);
+                $(this).parent().css('background-color', 'lightgreen');
+            },
+            error  : function (res) {
+                $(this).parent().css('background-color', 'red');
+                console.log(res);
+            }
+        })
+    }
+    function del() {
         $.ajax({
             url    : 'http://localhost:3010/migrate/del',
-            success: function (res)
-            {
+            success: function (res) {
                 console.log(res);
-                $(this).parent().css('background-color','lightgreen');
+                $(this).parent().css('background-color', 'lightgreen');
             },
-            error  : function (res)
-            {
-                $(this).parent().css('background-color','red');
+            error  : function (res) {
+                $(this).parent().css('background-color', 'red');
                 console.log(res);
             }
         })

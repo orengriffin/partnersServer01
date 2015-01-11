@@ -73,8 +73,8 @@ var func = {
                 partners          : [
                     {
                         partner_id        : {type: Schema.Types.ObjectId, ref: 'user'},
-                        activity_relations: {type: Schema.Types.ObjectId, ref: 'activitie'},
-                        created           : String
+                        activity_relation: {type: Schema.Types.ObjectId, ref: 'activitie'},
+                        created           : Date
 
                     }]
             });
@@ -97,7 +97,7 @@ var func = {
                 parent_activity_id: {type: Schema.Types.ObjectId, ref: 'activitie'},
                 activity          : String,
                 icon              : String,
-                created           : String
+                created           : Date
             });
             this.activityModel = mongoose.model('activitie', activitySchema);
 
