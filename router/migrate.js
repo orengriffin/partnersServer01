@@ -3,7 +3,7 @@
  */
 var express = require('express');
 var router = express.Router();
-var dbFunctions = require('./mymongoose');
+var dbFunctions = require('./../mymongoose');
 
 router.get('/userlist', function (req, res) {
 
@@ -54,11 +54,11 @@ router.get('/users/1/', function (req, res) {
                     last_name         : users[i].last_name,
                     locale            : users[i].locale,
                     image             : users[i].image,
-                    birthday          : users[i].birthday,
+                    birthday          : new Date (Number(users[i].birthday) * 1000),
                     gender            : users[i].gender,
                     email             : users[i].email,
-                    last_visit        : users[i].last_visit,
-                    created           : users[i].created,
+                    last_visit        : new Date(users[i].last_visit),
+                    created           : new Date(users[i].created),
                     location          : [users[i].location_longtitude, users[i].location_latitude],
                     udid              : users[i].udid,
                     session           : users[i].session,
@@ -422,12 +422,12 @@ router.get('/search', function (req, res) {
 
 router.get('/autocomplete', function (req, res) {
     dbFunctions.activityModel.where('activity')
-        .regex(new RegExp('^'+'ru', 'i'))
+        .regex(new RegExp('^' + 'ru', 'i'))
         .where('parent_activity').equals(0)
         .limit(3)
-        .exec( function (e, activities) {
-            activities.forEach( function (activity) {
-                console.log (activity.activity + ' ' +  activity.parent_activity + ' ' + activity.activity_id);
+        .exec(function (e, activities) {
+            activities.forEach(function (activity) {
+                console.log(activity.activity + ' ' + activity.parent_activity + ' ' + activity.activity_id);
 
             });
         });
@@ -436,22 +436,22 @@ router.get('/autocomplete', function (req, res) {
 router.get('/test', function (req, res) {
 
 
-/*
-//    change activiti model 'created' field to Date type.
+    /*
+     //    change activiti model 'created' field to Date type.
 
-    dbFunctions.oldActivityModel.find({})
-        .exec(function (e, oldActivities) {
-            oldActivities.forEach(function (oldActivity) {
-                dbFunctions.activityModel.findOne({activity_id : oldActivity.activity_id})
-                    .exec( function (e, newActivity) {
-                        newActivity.created = new Date (oldActivity.created);
-                        newActivity.save( function (e) {
-                            console.log(e);
-                        });
-                    });
-            }, oldActivities);
-        });
-*/
+     dbFunctions.oldActivityModel.find({})
+     .exec(function (e, oldActivities) {
+     oldActivities.forEach(function (oldActivity) {
+     dbFunctions.activityModel.findOne({activity_id : oldActivity.activity_id})
+     .exec( function (e, newActivity) {
+     newActivity.created = new Date (oldActivity.created);
+     newActivity.save( function (e) {
+     console.log(e);
+     });
+     });
+     }, oldActivities);
+     });
+     */
     /*
      dbFunctions.userModel.update({}, {partners: []}, {multi: true}, function (e, count, raw) {
      console.log('hope for good');
