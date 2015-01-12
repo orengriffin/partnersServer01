@@ -60,8 +60,8 @@ var func = {
                 birthday          : Number,
                 gender            : String,
                 email             : String,
-                last_visit        : String,
-                created           : String,
+                last_visit        : Date,
+                created           : Date,
                 location          : {type: [Number], index: '2dsphere'},
                 udid              : String,
                 session           : String,
@@ -138,8 +138,20 @@ var func = {
 
             //this.UserFacebookFriendsModel = mongoose.model('facebookFriend', this.userFacebookFriendsSchema);
             console.log('sucess!');
+        },
+
+        myForEach : function (obj, callback, finish) {
+                   var counter = 0,
+                       keys = Object.keys(obj),
+                       length = keys.length;
+            var next = function () {
+                if (counter < length)
+                    callback(keys[counter],obj[keys[counter++]], next);
+                else
+                    finish();
+            };
+                next();
         }
-    }
-    ;
+    } ;
 
 module.exports = func;

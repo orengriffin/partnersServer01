@@ -17,6 +17,7 @@
 <button onclick="search()"> search</button>
 <button onclick="test()"> test</button>
 <button onclick="autocomplete()"> autocomplete</button>
+<button onclick="updateLocation()"> location</button>
 <style type="text/css">
     .tg {
         border-collapse: collapse;
@@ -182,7 +183,7 @@
     }
     function test() {
         $.ajax({
-            url    : 'http://localhost:3010/migrate/test',
+            url    : 'http://localhost:3010/user/max',
             success: function (res) {
                 console.log(res);
                 $(this).parent().css('background-color', 'lightgreen');
@@ -205,6 +206,34 @@
                 console.log(res);
             }
         })
+    }
+    function updateLocation() {
+        var pos = {
+            coords: {
+                latitude : 32.100614,
+                longitude: 34.875644
+            }
+
+        };
+        $.ajax(
+                {
+                    url    : 'http://localhost:3010/user/updateLocation',
+                    type   : 'POST',
+                    data   : {
+//                        session: userModel.get('session'),
+                        lon    : pos.coords.latitude,     // Its backwards on on purpose
+                        lat    : pos.coords.longitude
+                    },
+                    error  : function (response) {
+                        /* Google Analytics? */
+                        console.log('didnt not update location on server. response: ' + response);
+                    },
+                    success: function (response) {
+                        //popupMsg('Location Updated');
+                        console.log('Location Updated in server. message: ' + JSON.parse(response).message);
+                    }
+                })
+
     }
     function del() {
         $.ajax({

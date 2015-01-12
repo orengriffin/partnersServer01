@@ -5,7 +5,7 @@
 var app = require('express')();
 var server = require('http').Server(app);
 var mongoose = require('mongoose');
-var routes = require('./migrate');
+var routes = require('./router/migrate');
 
 var connectionString = process.env.CUSTOMCONNSTR_MONGOLAB_URI;
 mongoose.connect(connectionString);
