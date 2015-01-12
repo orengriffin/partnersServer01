@@ -5,6 +5,14 @@ var mongoose = require('mongoose');
 //var bodyParser     =        require("body-parser");
 var dbFunctions = require('./mymongoose');
 var migrate = require('./migrate');
+var chat = require('./chat');
+var bodyParser = require('body-parser');
+
+
+app.use(bodyParser.urlencoded({
+    extended: true
+}));
+
 
 //if (process.env.MONGOLAB_URI)
 var uristring =
@@ -38,6 +46,7 @@ db.once('open', function(){
 
 
 app.use('/migrate/',migrate);
+app.use('/chat/',chat);
 
 app.get('/', function (req, res) {
     res.send('Hello World!')

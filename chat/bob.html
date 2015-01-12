@@ -8,45 +8,84 @@
 	<title></title>
 	<!-- Instantiate PubNub -->
 	<script type="text/javascript">
-		var auth_key = PUBNUB.uuid();
-
 		var pub = PUBNUB.init({
 			publish_key  : 'pub-c-7d87a3c4-b1b8-4d33-be38-43b78065bc90',
 			subscribe_key: 'sub-c-9d63a2c0-9665-11e4-9a03-02ee2ddab7fe',
-			auth_key     : auth_key
+		});
+		var userId = 47;
+		var channel = userId;
+		$.ajax({
+			type: "POST",
+			url : 'http://localhost:8080/chat/login',
+            data   : {channel:channel},
+			success: function (res)
+			{
+				console.log('chatId:' + channel);
+				subscribe();
+			},
+			error  : function (res, err)
+			{
+				console.log('error! respnse :');
+				console.log(arguments);
+			}
 		});
 
-		pub.subscribe({
-			channel: 'demo_tutorial',
-			message: function (m)
-			{
-				console.log(m);
-				$('#msgBox').append(m.msg + ' <br />');
-			},
-			connect: function ()
-			{
-				pub.publish({
-					channel: 'demo_tutorial',
-					message: {"msg": 'Entered Chat !'}
-				});
-			},
-			restore: true
-		});
-
-		function send()
-		{
-			pub.publish({
-				channel: 'demo_tutorial',
-				message: {"msg": $('#textInput').html()}
+		function getPartners() {
+			$.ajax({
+				type: "POST",
+				url : 'http://localhost:8080/chat/getPartners',
+				data   : {userId:userId},
+				success: function (res)
+				{
+					console.log('getPartners Success ! partners:');
+					console.log(res);
+				},
+				error  : function (res, err)
+				{
+					console.log('getPartners error! respnse :');
+					console.log(arguments);
+				}
 			});
 
 		}
 
 
+		function subscribe()
+		{
+			pub.subscribe({
+				channel: channel,
+				message: function (m)
+				{
+					$('#msgBox').append(m.msg + ' <br />');
+				},
+				connect: function ()
+				{
+					console.log('subscribed to ' + channel);
+					pub.publish({
+						channel: channel,
+						message: {"msg": 'Bob Entered Chat !'}
+					});
+				},
+				restore: true
+			});
+
+		}
+
+
+		function send()
+		{
+			pub.publish({
+				channel: channel,
+				message: {"msg": $('#textInput').html()}
+			});
+
+		}
+
 		$(document).ready(function ()
 		{
-
 			$('#sendButton').click(send);
+			getPartners();
+/*
 			pub.here_now({
 				channel : 'demo_tutorial',
 				callback: function (m)
@@ -55,6 +94,7 @@
 					console.log(m)
 				}
 			});
+*/
 		})
 	</script>
 </head>
