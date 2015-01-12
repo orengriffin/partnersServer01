@@ -4,17 +4,17 @@ var server = require('http').createServer(app);
 var mongoose = require('mongoose');
 var bodyParser = require("body-parser");
 var dbFunctions = require('./mymongoose');
-var migrate = require('./migrate');
-var chat = require('./chat');
 
 app.use(bodyParser.urlencoded({
     extended: true
 }));
 
-//if (process.env.MONGOLAB_URI)
 // router
+
+var chat = require('./router/chat');
 var migrate = require('./router/migrate');
-var user = require ('./router/user')
+var user = require ('./router/user');
+
 var uristring =
     process.env.MONGOLAB_URI ||
     process.env.MONGOHQ_URL ||

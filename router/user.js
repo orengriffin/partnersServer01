@@ -24,6 +24,7 @@ router.post('/enterApp/', function (req, res) {
     if (!paramsReceived.fb_uid)
         res.send('no facebook id');
     paramsReceived.location = [paramsReceived.longitude, paramsReceived.latitude  ];
+    paramsReceived.birthday = new Date(paramsReceived.birthday);
     //paramsReceived.bri
     delete paramsReceived.longitude;
     delete paramsReceived.latitude;
@@ -36,8 +37,8 @@ router.post('/enterApp/', function (req, res) {
                 user.last_visit = new Date();
 
                 db.myForEach(paramsReceived, function (prop, val, next) {
-                    //if (val && val != 'unknown' && user[prop] != val)
-                    if (val && val != 'unknown')
+                    //if (val && val != 'unknown')
+                    if (val && val != 'unknown' && user[prop] != val)
                         user[prop] = val;
                     console.log(prop + ' : ' + val);
                     next();

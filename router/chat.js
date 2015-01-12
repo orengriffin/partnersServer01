@@ -1,7 +1,11 @@
 var express = require('express');
 var router = express.Router();
-var dbFunctions = require('./mymongoose');
+var dbFunctions = require('./../mymongoose');
 
+router.get('/sendMessage', function (req, res) {
+    //var newMessage = dbFunctions.messageModel({})
+    newMessage.save();
+});
 
 
 var pub = require("pubnub")({

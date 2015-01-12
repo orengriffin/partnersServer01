@@ -1,157 +1,171 @@
 var func = {
-        UserFacebookFriendsModel: undefined,
+    UserFacebookFriendsModel: undefined,
 
-        oldUserModel: undefined,
-        userModel   : undefined,
+    oldUserModel        : undefined,
+    userModel           : undefined,
 
-        oldActivityModel: undefined,
-        ActivityModel   : undefined,
+    oldActivityModel    : undefined,
+    ActivityModel       : undefined,
 
-        oldUserActivityModel: undefined,
-        userActivityModel   : undefined,
+    oldUserActivityModel: undefined,
+    userActivityModel   : undefined,
 
-        oldPartnersModel: undefined,
-        partnersModel   : undefined,
+    oldPartnersModel    : undefined,
+    partnersModel       : undefined,
 
-        init: function (mongoose) {
+    messageModel: null,
 
-            var Schema = mongoose.Schema;
+    init: function (mongoose) {
 
-            /*
-             this.userFacebookFriendsSchema = new Schema({
-             id     : String,
-             friends: [{
-             id  : String,
-             name: String
-             }]
-             });
-             */
-            var oldUserSchema = new Schema({
-                user               : Number,
-                fb_uid             : Number,
-                first_name         : String,
-                last_name          : String,
-                locale             : String,
-                image              : String,
-                birthday           : Number,
-                gender             : String,
-                email              : String,
-                last_visit         : String,
-                created            : String,
-                location_longtitude: Number,
-                location_latitude  : Number,
-                udid               : String,
-                session            : String,
-                notify_partner     : Boolean,
-                email_notification : Boolean,
-                platform           : String,
-                last_update        : String
-            });
+        var Schema = mongoose.Schema;
 
-            this.oldUserModel = mongoose.model('olduser', oldUserSchema);
+        /*
+         this.userFacebookFriendsSchema = new Schema({
+         id     : String,
+         friends: [{
+         id  : String,
+         name: String
+         }]
+         });
+         */
 
-            var userSchema = new Schema({
-                user              : Number,
-                fb_uid            : Number,
-                first_name        : String,
-                last_name         : String,
-                locale            : String,
-                image             : String,
-                birthday          : Number,
-                gender            : String,
-                email             : String,
-                last_visit        : Date,
-                created           : Date,
-                location          : {type: [Number], index: '2dsphere'},
-                udid              : String,
-                session           : String,
-                notify_partner    : Boolean,
-                email_notification: Boolean,
-                platform          : String,
-                last_update       : String,
-                activities        : [{type: Schema.Types.ObjectId, ref: 'activitie'}],
-                partners          : [
-                    {
-                        partner_id        : {type: Schema.Types.ObjectId, ref: 'user'},
-                        activity_relation: {type: Schema.Types.ObjectId, ref: 'activitie'},
-                        created           : Date
+        var oldUserSchema = new Schema({
+            user               : Number,
+            fb_uid             : Number,
+            first_name         : String,
+            last_name          : String,
+            locale             : String,
+            image              : String,
+            birthday           : Number,
+            gender             : String,
+            email              : String,
+            last_visit         : String,
+            created            : String,
+            location_longtitude: Number,
+            location_latitude  : Number,
+            udid               : String,
+            session            : String,
+            notify_partner     : Boolean,
+            email_notification : Boolean,
+            platform           : String,
+            last_update        : String
+        });
 
-                    }]
-            });
-            //userSchema.index({location:'2dsphere'});
-            this.userModel = mongoose.model('user', userSchema);
+        this.oldUserModel = mongoose.model('olduser', oldUserSchema);
+
+        var messageSchema = new Schema({
+            sender   : {type: Schema.Types.ObjectId, ref: 'user'},
+            recepient: {type: Schema.Types.ObjectId, ref: 'user'},
+            message  : String,
+            isRead   : Boolean,
+            timeStamp: Date
+        });
 
 
-            var oldActivitySchema = new Schema({
-                activity_id    : Number,
-                parent_activity: Number,
-                icon           : String,
-                created        : String,
-                activity       : String
-            });
-            this.oldActivityModel = mongoose.model('oldActivitie', oldActivitySchema);
+        this.messageModel = mongoose.model('message', messageSchema);
 
-            var activitySchema = new Schema({
-                activity_id       : Number,
-                parent_activity   : Number,
-                parent_activity_id: {type: Schema.Types.ObjectId, ref: 'activitie'},
-                activity          : String,
-                icon              : String,
-                created           : Date
-            });
-            this.activityModel = mongoose.model('activitie', activitySchema);
+        var userSchema = new Schema({
+            user              : Number,
+            fb_uid            : Number,
+            first_name        : String,
+            last_name         : String,
+            locale            : String,
+            image             : String,
+            birthday          : Date,
+            gender            : String,
+            email             : String,
+            last_visit        : Date,
+            created           : Date,
+            location          : {type: [Number], index: '2dsphere'},
+            udid              : String,
+            session           : String,
+            notify_partner    : Boolean,
+            email_notification: Boolean,
+            platform          : String,
+            last_update       : String,
+            activities        : [{type: Schema.Types.ObjectId, ref: 'activitie'}],
+            partners          : [
+                {
+                    partner_id       : {type: Schema.Types.ObjectId, ref: 'user'},
+                    activity_relation: {type: Schema.Types.ObjectId, ref: 'activitie'},
+                    created          : Date
 
-            var oldUserActivitySchema = new Schema({
-                user       : Number,
-                activity_id: Number
-            });
-            this.oldUserActivityModel = mongoose.model('oldUsersActivitie', oldUserActivitySchema);
+                }]
+        });
+        //userSchema.index({location:'2dsphere'});
+        this.userModel = mongoose.model('user', userSchema);
 
-            var userActivitySchema = new Schema({
-                user_id     : {type: Schema.Types.ObjectId, ref: 'user'},
-                user        : Number,
-                activity_id_: {type: Schema.Types.ObjectId, ref: 'activitie'},
-                activity_id : Number
-            });
-            this.userActivityModel = mongoose.model('userActivitie', userActivitySchema);
 
-            var oldPartnersSchema = new Schema({
-                id        : Number,
-                user      : Number,
-                partner_id: Number,
-                relation  : String,
-                created   : String
-            });
+        var oldActivitySchema = new Schema({
+            activity_id    : Number,
+            parent_activity: Number,
+            icon           : String,
+            created        : String,
+            activity       : String
+        });
+        this.oldActivityModel = mongoose.model('oldActivitie', oldActivitySchema);
 
-            this.oldPartnersModel = mongoose.model('oldpartner', oldPartnersSchema);
+        var activitySchema = new Schema({
+            activity_id       : Number,
+            parent_activity   : Number,
+            parent_activity_id: {type: Schema.Types.ObjectId, ref: 'activitie'},
+            activity          : String,
+            icon              : String,
+            created           : Date
+        });
+        this.activityModel = mongoose.model('activitie', activitySchema);
 
-            var partnersSchema = new Schema({
-                user       : Number,
-                partner_id : Number,
-                partner_id_: {type: Schema.Types.ObjectId, ref: 'user'},
-                relation_id:  {type: Schema.Types.ObjectId, ref: 'activitie'},
-                relation   : String,
-                created    : String
-            });
+        var oldUserActivitySchema = new Schema({
+            user       : Number,
+            activity_id: Number
+        });
+        this.oldUserActivityModel = mongoose.model('oldUsersActivitie', oldUserActivitySchema);
 
-            this.partnersModel = mongoose.model('partner', partnersSchema);
+        var userActivitySchema = new Schema({
+            user_id     : {type: Schema.Types.ObjectId, ref: 'user'},
+            user        : Number,
+            activity_id_: {type: Schema.Types.ObjectId, ref: 'activitie'},
+            activity_id : Number
+        });
+        this.userActivityModel = mongoose.model('userActivitie', userActivitySchema);
 
-            //this.UserFacebookFriendsModel = mongoose.model('facebookFriend', this.userFacebookFriendsSchema);
-            console.log('sucess!');
-        },
+        var oldPartnersSchema = new Schema({
+            id        : Number,
+            user      : Number,
+            partner_id: Number,
+            relation  : String,
+            created   : String
+        });
 
-        myForEach : function (obj, callback, finish) {
-                   var counter = 0,
-                       keys = Object.keys(obj),
-                       length = keys.length;
-            var next = function () {
-                if (counter < length)
-                    callback(keys[counter],obj[keys[counter++]], next);
-                else
-                    finish();
-            };
-                next();
-        }
-    } ;
+        this.oldPartnersModel = mongoose.model('oldpartner', oldPartnersSchema);
+
+        var partnersSchema = new Schema({
+            user       : Number,
+            partner_id : Number,
+            partner_id_: {type: Schema.Types.ObjectId, ref: 'user'},
+            relation_id: {type: Schema.Types.ObjectId, ref: 'activitie'},
+            relation   : String,
+            created    : String
+        });
+
+        this.partnersModel = mongoose.model('partner', partnersSchema);
+
+        //this.UserFacebookFriendsModel = mongoose.model('facebookFriend', this.userFacebookFriendsSchema);
+        console.log('sucess!');
+    },
+
+    myForEach: function (obj, callback, finish) {
+        var counter = 0,
+            keys = Object.keys(obj),
+            length = keys.length;
+        var next = function () {
+            if (counter < length)
+                callback(keys[counter], obj[keys[counter++]], next);
+            else
+                finish();
+        };
+        next();
+    }
+};
 
 module.exports = func;
