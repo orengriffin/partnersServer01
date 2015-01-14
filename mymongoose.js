@@ -55,12 +55,11 @@ var func = {
 
         var messageSchema = new Schema({
             sender   : {type: Schema.Types.ObjectId, ref: 'user'},
-            recepient: {type: Schema.Types.ObjectId, ref: 'user'},
+            recipient: {type: Schema.Types.ObjectId, ref: 'user'},
             message  : String,
             isRead   : Boolean,
             timeStamp: Date
         });
-
 
         this.messageModel = mongoose.model('message', messageSchema);
 

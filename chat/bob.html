@@ -12,12 +12,14 @@
 			publish_key  : 'pub-c-7d87a3c4-b1b8-4d33-be38-43b78065bc90',
 			subscribe_key: 'sub-c-9d63a2c0-9665-11e4-9a03-02ee2ddab7fe',
 		});
-		var userId = 47;
-		var channel = userId;
+		var userId = '54ad293c8f94e3d8344883ad',
+				channel = userId,
+				messageArray = [];
+
 		$.ajax({
-			type: "POST",
-			url : 'http://localhost:8080/chat/login',
-            data   : {channel:channel},
+			type   : "POST",
+			url    : 'http://localhost:8080/chat/login',
+			data   : {channel: channel},
 			success: function (res)
 			{
 				console.log('chatId:' + channel);
@@ -29,26 +31,6 @@
 				console.log(arguments);
 			}
 		});
-
-		function getPartners() {
-			$.ajax({
-				type: "POST",
-				url : 'http://localhost:8080/chat/getPartners',
-				data   : {userId:userId},
-				success: function (res)
-				{
-					console.log('getPartners Success ! partners:');
-					console.log(res);
-				},
-				error  : function (res, err)
-				{
-					console.log('getPartners error! respnse :');
-					console.log(arguments);
-				}
-			});
-
-		}
-
 
 		function subscribe()
 		{
@@ -74,27 +56,116 @@
 
 		function send()
 		{
-			pub.publish({
-				channel: channel,
-				message: {"msg": $('#textInput').html()}
+			$.ajax({
+				type   : "GET",
+				url    : 'http://localhost:8080/chat/sendMessage',
+				data   : {
+					session  : userId,
+					recipient: '54ad293c8f94e3d8344884c1',
+					message  : $('#textInput').html()
+				},
+				success: function (res)
+				{
+					console.log('send Success !');
+				},
+				error  : function (res, err)
+				{
+					console.log('send error! response :');
+					console.log(arguments);
+				}
 			});
+
+			/*
+			 pub.publish({
+			 channel: channel,
+			 message: {"msg": $('#textInput').html()}
+			 });
+			 */
+
+		}
+
+
+		function appendCompleted()
+		{
+			$.ajax({
+				type   : "POST",
+				url    : 'http://localhost:8080/chat/appendCompleted',
+				data   : {
+					messages: messageArray
+				},
+				success: function (res)
+				{
+					console.log('appendCompleted Success !');
+//					$('#msgBox').empty().append(res + ' <br />');
+
+				},
+				error  : function (res, err)
+				{
+					console.log('appendCompleted error! response :');
+					console.log(arguments);
+				}
+			});
+
+		}
+
+
+		function getHistory()
+		{
+			$.ajax({
+				type   : "GET",
+				url    : 'http://localhost:8080/chat/getHistory',
+				data   : {
+					session: userId
+				},
+				success: function (res)
+				{
+					console.log('getHistory Success !');
+					$('#msgBox').empty().append(res + ' <br />');
+					var messageIds = [];
+					messageArray = JSON.parse(res);
+					console.info('messageArray');
+					console.info(messageArray);
+					for (var i = 0; i < messageArray.length; i++)
+					{
+						var msgId = messageArray[i]._id;
+						messageIds.push(msgId);
+					}
+					console.info('messageIds');
+					console.info(messageIds);
+
+				},
+				error  : function (res, err)
+				{
+					console.log('getHistory error! response :');
+					console.log(arguments);
+				}
+			});
+
+			/*
+			 pub.publish({
+			 channel: channel,
+			 message: {"msg": $('#textInput').html()}
+			 });
+			 */
 
 		}
 
 		$(document).ready(function ()
 		{
 			$('#sendButton').click(send);
-			getPartners();
-/*
-			pub.here_now({
-				channel : 'demo_tutorial',
-				callback: function (m)
-				{
-					console.log('herenow:');
-					console.log(m)
-				}
-			});
-*/
+			$('#getHistoryButton').click(getHistory);
+			$('#appendButton').click(appendCompleted);
+
+			/*
+			 pub.here_now({
+			 channel : 'demo_tutorial',
+			 callback: function (m)
+			 {
+			 console.log('herenow:');
+			 console.log(m)
+			 }
+			 });
+			 */
 		})
 	</script>
 </head>
@@ -105,7 +176,11 @@
 <div contenteditable="true" id='textInput'
 	 style="border: 1px solid lightgray;border-radius: 5px;margin: 30px 0 15px 20px; width:300px; height: 40px"></div>
 
-<input id='sendButton' type="button" value="Send" style="margin: 0 0 0 20px;"/>
+<input id='appendButton' type="button" value="appendCompleted" style="margin: 0 0 0 20px;"/> <input id='sendButton'
+																									type="button"
+																									value="Send"
+																									style="margin: 0 0 0 20px;"/>
+<input id='getHistoryButton' type="button" value="Get History" style="margin: 0 0 0 20px;"/>
 
 <div style="margin: 20px; border:1px solid lightgray" id="msgBox">
 
