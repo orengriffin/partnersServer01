@@ -465,6 +465,21 @@ router.get('/del/', function (req, res) {
     })
 
 });
+router.get('/birthday/', function (req, res) {
+    dbFunctions.oldUserModel.find({})
+        .select('birthday user')
+        .exec(function (e,users){
+            users.forEach(function (user) {
+                dbFunctions.userModel.update({user:user.user},
+                    {birthday:new Date(user.birthday * 1000)},
+                    function(e,i,raw){
+                        console.log('update');
+                    })
+
+            });
+        });
+
+});
 
 //userActivities/3/ 40
 router.get('/userActivities/3/', function (req, res) {

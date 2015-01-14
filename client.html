@@ -15,9 +15,11 @@
 <button onclick="post()"> pot</button>
 <button onclick="del()"> del</button>
 <button onclick="search()"> search</button>
+<button onclick="birthday()"> birthday</button>
 <button onclick="test()"> test</button>
 <button onclick="autocomplete()"> autocomplete</button>
 <button onclick="updateLocation()"> location</button>
+<button onclick="isParters()"> isParters</button>
 <style type="text/css">
     .tg {
         border-collapse: collapse;
@@ -194,6 +196,19 @@
             }
         })
     }
+    function birthday() {
+        $.ajax({
+            url    : 'http://localhost:3010/migrate/birthday/',
+            success: function (res) {
+                console.log(res);
+                $(this).parent().css('background-color', 'lightgreen');
+            },
+            error  : function (res) {
+                $(this).parent().css('background-color', 'red');
+                console.log(res);
+            }
+        })
+    }
     function autocomplete() {
         $.ajax({
             url    : 'http://localhost:3010/migrate/autocomplete',
@@ -221,8 +236,8 @@
                     type   : 'POST',
                     data   : {
 //                        session: userModel.get('session'),
-                        lon    : pos.coords.latitude,     // Its backwards on on purpose
-                        lat    : pos.coords.longitude
+                        lon: pos.coords.latitude,     // Its backwards on on purpose
+                        lat: pos.coords.longitude
                     },
                     error  : function (response) {
                         /* Google Analytics? */
@@ -248,6 +263,34 @@
             }
         })
     }
+    function isParters() {
+        $.ajax({
+            url    : 'http://localhost:3010/user/isPartners',
+            data   : {
+                user   : 53,
+                session: '54ad293c8f94e3d8344883ae'
+            },
+            success: function (response) {
+                response = JSON.parse(response);
+                /* Check if response is not partner */
+                if (!response['message']) {
+                    /* Set Archive Settings */
+                    var list = PStorage.get('chat_friends');
+                    if (list) list = JSON.parse(list);
+                    list['chat_user_' + user_id] = user_object;
+                    PStorage.set('chat_friends', JSON.stringify(list)); // Saving
+                    if (callback) callback();
+
+                }
+            },
+            error  : function (response) {
+                /* Google Analytics */
+//            sendEevent(HTTP_ERROR, 'add-stanger-as-local-partner');
+                console.log('ererere');
+            }
+        });
+    }
+
 </script>
 
 </body>
