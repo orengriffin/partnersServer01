@@ -460,9 +460,16 @@ router.get('/test', function (req, res) {
 
 });
 router.get('/del/', function (req, res) {
+    dbFunctions.activityModel.remove({activity:'dog'})
+        .exec(function (e) {
+            console.log('hope for good');
+        });
+
+/*
     dbFunctions.activityModel.remove({relation: {$exists: true}}).exec(function (e, partners) {
         console.log('hope for good');
     })
+*/
 
 });
 router.get('/birthday/', function (req, res) {

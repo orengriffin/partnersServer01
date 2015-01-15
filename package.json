@@ -5,7 +5,8 @@
         "express": "^4.0.0",
         "mongoose": "*",
         "body-parser": "^1.8.1",
-        "pubnub": "*"
+        "pubnub": "*",
+        "async":"*"
 
     },
     "subdomain": "undefined-whispering-cove-2135",

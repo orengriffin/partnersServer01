@@ -1,17 +1,17 @@
 var func = {
     UserFacebookFriendsModel: undefined,
 
-    oldUserModel        : undefined,
-    userModel           : undefined,
+    oldUserModel: undefined,
+    userModel   : undefined,
 
-    oldActivityModel    : undefined,
-    ActivityModel       : undefined,
+    oldActivityModel: undefined,
+    ActivityModel   : undefined,
 
     oldUserActivityModel: undefined,
     userActivityModel   : undefined,
 
-    oldPartnersModel    : undefined,
-    partnersModel       : undefined,
+    oldPartnersModel: undefined,
+    partnersModel   : undefined,
 
     messageModel: null,
 
@@ -153,7 +153,7 @@ var func = {
         console.log('sucess!');
     },
 
-    myForEach: function (obj, callback, finish) {
+    myForEach   : function (obj, callback, finish) {
         var counter = 0,
             keys = Object.keys(obj),
             length = keys.length;
@@ -164,6 +164,56 @@ var func = {
                 finish();
         };
         next();
+    },
+
+    distanceCalc: function (newLocation, oldLocation) {
+        if (typeof(Number.prototype.toRad) === "undefined") {
+            Number.prototype.toRad = function () {
+                return this * Math.PI / 180;
+            }
+        }
+        var lat1 = newLocation.lat;
+        var lon1 = newLocation.lon;
+        var lon2 = oldLocation.longitude;
+        var lat2 = oldLocation.latitude;
+
+
+        var R = 6371; // km
+        var φ1 = lat1.toRad();
+        var φ2 = lat2.toRad();
+        var Δφ = (lat2 - lat1).toRad();
+        var Δλ = (lon2 - lon1).toRad();
+
+        var a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        var d = R * c * 1000;
+
+        return d;
+    },
+
+    timeCalc    : function (then, isAge) {
+        if (!then)
+            return '';
+        then = (new Date()).getTime() - then.getTime();
+
+        then /= 1000;
+        var timeObj = [
+            {n: 60, s: 'Minutes'},
+            {n: 60, s: 'Hours'},
+            {n: 24, s: 'Days'},
+            {n: 31, s: 'Months'},
+            {n: 12, s: 'Years'},
+            { n: 100, s: 'Milenums'   }
+        ];
+        for (var i = 0; true; i++) {
+            then /= timeObj[i].n;
+            if (then / timeObj[i + 1].n < 1)
+                return parseInt(then) + ((!isAge) ? (' ' + timeObj[i].s + ' ago') : '')
+        }
+
     }
 };
 

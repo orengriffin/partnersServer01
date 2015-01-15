@@ -19,7 +19,8 @@
 <button onclick="test()"> test</button>
 <button onclick="autocomplete()"> autocomplete</button>
 <button onclick="updateLocation()"> location</button>
-<button onclick="isParters()"> isParters</button>
+<button onclick="stranger()"> stranger</button>
+<button onclick="notifi()"> notifi</button>
 <style type="text/css">
     .tg {
         border-collapse: collapse;
@@ -116,7 +117,32 @@
     var user = parseInt(Math.random() * 100000) + '';
     $(document).ready(function () {
 //    var socket = io('http://localhost:3010');
+        var timeCalc    = function (then, isAge) {
+            then = (new Date()).getTime() - then.getTime();
 
+            then /= 1000;
+            var timeObj = [
+                { n: 60, s: 'Minutes' },
+                { n: 60, s: 'Hours'   },
+                { n: 24, s: 'Days'    },
+                { n: 31, s: 'Months'  },
+                { n: 12, s: 'Years'   },
+                { n: 100, s: 'Milenums'   }
+            ];
+            for (var i = 0; true; i++) {
+
+                then /= timeObj[i].n;
+                if (then / timeObj[i + 1].n < 1)
+                    return parseInt(then) + ((!isAge) ? (' ' + timeObj[i].s + ' ago') : ' ')
+
+            }
+
+        };
+
+        var tmpD = (new Date('1/11/15')).getTime();
+        var now = (new Date()).getTime();
+        console.log( timeCalc(new Date('08/08/1983'),1));
+        debugger;
 
         console.log("god is a dj");
         $('table button').click(mainAjax);
@@ -263,12 +289,21 @@
             }
         })
     }
-    function isParters() {
+    function stranger() {
         $.ajax({
-            url    : 'http://localhost:3010/user/isPartners',
+//            type   : 'POST',
+//            type   : 'DELETE',
+//            url    : 'http://localhost:3010/user/activities' +  '?session=54ad293c8f94e3d8344883ae',
+            url    : 'http://localhost:3010/user/stranger',// +  '?cb=' + (new Date().getTime()),
             data   : {
-                user   : 53,
+                user   : 17,
                 session: '54ad293c8f94e3d8344883ae'
+//                activity_id: '2784'
+//                cb     : (new Date()).getTime(),
+
+
+//                activity: 'dog'
+
             },
             success: function (response) {
                 response = JSON.parse(response);
@@ -288,6 +323,17 @@
 //            sendEevent(HTTP_ERROR, 'add-stanger-as-local-partner');
                 console.log('ererere');
             }
+        });
+    }
+    function notifi (){
+        $.ajax({
+            url: 'http://localhost:3010/user/notification',
+            data: {
+                type: 'viaEmail',
+                session: '54ad293c8f94e3d8344883ae',
+                status: 1
+            },
+            type: "POST"
         });
     }
 

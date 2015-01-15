@@ -13,12 +13,15 @@ app.use(bodyParser.urlencoded({
 
 var chat = require('./router/chat');
 var migrate = require('./router/migrate');
-var user = require ('./router/user');
+var user = require('./router/user');
+
+//
 
 var uristring =
     process.env.MONGOLAB_URI ||
     process.env.MONGOHQ_URL ||
     'mongodb://heroku_app31337616:obtp59dcp2qqaiushniu6ea4cu@ds049130.mongolab.com:49130/heroku_app31337616';
+
 app.use(bodyParser.urlencoded({extended: false}));
 
 app.set('port', process.env.PORT || 3010);
@@ -44,9 +47,6 @@ db.once('open', function () {
     dbFunctions.init(this.base);
 });
 
-
-app.use('/migrate/',migrate);
-app.use('/chat/',chat);
 
 app.use('/migrate/', migrate);
 app.use('/user/', user);
