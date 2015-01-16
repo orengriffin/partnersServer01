@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-var dbFunctions = require('./../mymongoose');
+var db = require('./../mymongoose');
 
 
 var pub = require("pubnub")({
@@ -41,7 +41,7 @@ router.get('/getHistory', function (req, res)
 {
     var user_id = req.query.session;
 
-    dbFunctions.messageModel.find({
+    db.messageModel.find({
         $or: [
             {
                 'sender': user_id
@@ -67,7 +67,7 @@ router.post('/appendCompleted', function (req, res)
     for (var i = 0; i < messages.length; i++)
     {
         var msgId = messages[i]._id;
-        dbFunctions.messageModel.findOne()
+        db.messageModel.findOne()
             .where('_id').equals(msgId)
             .exec(function (e, message)
             {
@@ -87,7 +87,7 @@ router.get('/sendMessage', function (req, res)
     var recipient = req.query.recipient;
     var sender = req.query.session;
 
-    var newMessage = dbFunctions.messageModel({
+    var newMessage = db.messageModel({
         sender   : sender,
         recipient: recipient,
         message  : message,

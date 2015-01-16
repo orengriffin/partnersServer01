@@ -3,36 +3,13 @@
  */
 var express = require('express');
 var router = express.Router();
-var dbFunctions = require('./../mymongoose');
+var db = require('./../mymongoose');
 
-router.get('/userlist', function (req, res) {
 
-});
-router.get('/user', function (req, res) {
-        var js = JSON.stringify(req.query);
-        var id = JSON.stringify(req.query.id);
-        dbFunctions.UserFacebookFriendsModel.find(id).exec(function (e, users) {
-            if (!users[0]) {
-                console.log('Creating new UserFacebookFriendsModel');
-                var newUser = new dbFunctions.UserFacebookFriendsModel(req.query);
-                newUser.save(function (err) {
-                    if (!err)
-                        res.send('success');
-                    else
-                        res.send('error');
-                });
-            }
-            else {
-                users[0].save(js);
-                console.log('updated');
-            }
-        });
-    }
-);
 router.get('/get', function (req, res) {
         var js = JSON.stringify(req.query);
         console.log(js);
-        dbFunctions.oldUserModel.find({user: 1}).exec(function (e, users) {
+        db.oldUserModel.find({user: 1}).exec(function (e, users) {
             res.send(users[0]);
             console.log(users);
         });
@@ -44,17 +21,17 @@ router.get('/users/1/', function (req, res) {
         var index = 1;
         var max = 0;
         var err = 0;
-        dbFunctions.oldUserModel.find({}, function (e, users) {
+        db.oldUserModel.find({}, function (e, users) {
             max = users.length;
             for (var i = 0; i < users.length; i++) {
-                var newUser = dbFunctions.userModel({
+                var newUser = db.userModel({
                     user              : users[i].user,
                     fb_uid            : users[i].fb_uid,
                     first_name        : users[i].first_name,
                     last_name         : users[i].last_name,
                     locale            : users[i].locale,
                     image             : users[i].image,
-                    birthday          : new Date (Number(users[i].birthday) * 1000),
+                    birthday          : (!!Number(users[i].birthday)) ? (new Date(Number(users[i].birthday) * 1000)) : null,
                     gender            : users[i].gender,
                     email             : users[i].email,
                     last_visit        : new Date(users[i].last_visit),
@@ -66,6 +43,7 @@ router.get('/users/1/', function (req, res) {
                     email_notification: users[i].email_notification,
                     platform          : users[i].platform,
                     last_update       : users[i].last_update,
+                    age               : (!!Number(users[i].birthday)) ? db.ageCalc(new Date(Number(users[i].birthday) * 1000)) : null,
                     activities        : [],
                     partners          : []
                 });
@@ -87,13 +65,13 @@ router.get('/users/1/', function (req, res) {
 //            adding each user its array of activities (_id)
 //
 router.get('/users/2/', function (req, res) {
-    //dbFunctions.userActivityModel.find()
+    //db.userActivityModel.find()
     console.log('user 2 was called.');
-    dbFunctions.userModel.find({})
+    db.userModel.find({})
         .select('_id activities first_name user')
         .exec(function (e, users) {
             users.forEach(function (user) {
-                dbFunctions.userActivityModel.find({user_id: user._id})
+                db.userActivityModel.find({user_id: user._id})
                     .select('activity_id_ activity_id')
                     .exec(function (e, activities) {
                         activities.forEach(function (activity) {
@@ -118,10 +96,10 @@ router.get('/activities/1/', function (req, res) {
         var index = 1;
         var max = 0;
         var err = 0;
-        dbFunctions.oldActivityModel.find({}, function (e, activities) {
+        db.oldActivityModel.find({}, function (e, activities) {
             max = activities.length;
             for (var i = 0; i < activities.length; i++) {
-                var newActivity = dbFunctions.activityModel({
+                var newActivity = db.activityModel({
                     parent_activity_id: null,
                     parent_activity   : activities[i].parent_activity,
                     activity          : activities[i].activity,
@@ -153,7 +131,7 @@ router.get('/activities/2/', function (req, res) {
         var max = 0;
         var err = 0;
         var ii = 0;
-        dbFunctions.activityModel.find({}, function (e, activities) {
+        db.activityModel.find({}, function (e, activities) {
             max = activities.length;
             for (var i = 0; i < activities.length; i++) {
                 var searchObj = {
@@ -162,7 +140,7 @@ router.get('/activities/2/', function (req, res) {
                 var updateObj = {
                     parent_activity_id: activities[i]._id
                 };
-                dbFunctions.activityModel.update(searchObj, updateObj, {multi: true}, function (e, count, raw) {
+                db.activityModel.update(searchObj, updateObj, {multi: true}, function (e, count, raw) {
                     ii++;
                     if (!!e)
                         err++;
@@ -191,7 +169,7 @@ router.get('/activities/3', function (req, res) {
         var index = 1;
         var max = 0;
         var err = 0;
-        dbFunctions.activityModel.find({parent_activity_id: null}, function (e, activities) {
+        db.activityModel.find({parent_activity_id: null}, function (e, activities) {
             max = activities.length;
             for (var i = 0; i < activities.length; i++) {
                 var searchObj = {
@@ -200,7 +178,7 @@ router.get('/activities/3', function (req, res) {
                 var updateObj = {
                     parent_activity_id: activities[i]._id
                 };
-                dbFunctions.activityModel.findOneAndUpdate(searchObj, updateObj, {multi: true}, function (e, count, raw) {
+                db.activityModel.findOneAndUpdate(searchObj, updateObj, {multi: true}, function (e, count, raw) {
                     if (!!e)
                         err++;
                     console.log(index + ' ? ' + max);
@@ -225,16 +203,16 @@ router.get('/userActivities/1/', function (req, res) {
         var max = 0;
         var err = 0;
         var arr = {};
-        dbFunctions.userModel.find({}, function (e, users) {
+        db.userModel.find({}, function (e, users) {
             max = users.length;
             for (var i = 0; i < users.length; i++) {
                 var searchObj = {
                     user: users[i].user
                 };
                 arr[users[i].user] = users[i]._id;
-                dbFunctions.oldUserActivityModel.find(searchObj, function (e, oldUserActivities) {
+                db.oldUserActivityModel.find(searchObj, function (e, oldUserActivities) {
                     for (var j = 0; j < oldUserActivities.length; j++) {
-                        var newUserActivity = dbFunctions.userActivityModel({
+                        var newUserActivity = db.userActivityModel({
                             user_id     : arr[oldUserActivities[j].user],
                             user        : oldUserActivities[j].user,
                             activity_id : oldUserActivities[j].activity_id,
@@ -266,10 +244,10 @@ router.get('/userActivities/2/', function (req, res) {
 
         var index = 0;
         var max = 0;
-        dbFunctions.userActivityModel.count(function (e, count) {
+        db.userActivityModel.count(function (e, count) {
             max = count;
         });
-        dbFunctions.activityModel.find({}, function (e, activities) {
+        db.activityModel.find({}, function (e, activities) {
             for (var i = 0; i < activities.length; i++) {
                 var searchObj = {
                     activity_id: activities[i].activity_id
@@ -277,7 +255,7 @@ router.get('/userActivities/2/', function (req, res) {
                 var updateObj = {
                     activity_id_: activities[i]._id
                 };
-                dbFunctions.userActivityModel.update(searchObj, updateObj, {multi: true}, function (e, count, raw) {
+                db.userActivityModel.update(searchObj, updateObj, {multi: true}, function (e, count, raw) {
                     index += (count) ? (count - 1) : 1;
                     //if (count == 0)
 
@@ -295,7 +273,7 @@ router.get('/userActivities/2/', function (req, res) {
 //
 router.get('/userActivities/3/', function (req, res) {
     console.log('userActivities 3 was called.');
-    dbFunctions.userActivityModel.remove({activity_id_: null}, function (err) {
+    db.userActivityModel.remove({activity_id_: null}, function (err) {
         console.log(err);
         if (!err)
             res.send('succss');
@@ -305,14 +283,14 @@ router.get('/userActivities/3/', function (req, res) {
 
 router.get('/partners/1/', function (req, res) {
     console.log('partners 1 was called');
-    dbFunctions.oldPartnersModel.find({})
+    db.oldPartnersModel.find({})
         .exec(function (e, partners) {
             partners.forEach(function (partner) {
-                dbFunctions.userModel.findOne({user: partner.partner_id})
+                db.userModel.findOne({user: partner.partner_id})
                     .select('_id')
                     .exec(function (e, user) {
                         if (!!user) {
-                            var newPartner = dbFunctions.partnersModel({
+                            var newPartner = db.partnersModel({
                                 partner_id : partner.partner_id,
                                 created    : partner.created,
                                 relation   : partner.relation,
@@ -336,13 +314,13 @@ router.get('/partners/1/', function (req, res) {
 router.get('/partners/2/', function (req, res) {
     console.log('partners 2 was called.');
 
-    dbFunctions.partnersModel.remove({relation: ''})
+    db.partnersModel.remove({relation: ''})
         .exec(function (e, b) {
-            dbFunctions.partnersModel.find({})
+            db.partnersModel.find({})
                 .select('relation')
                 .exec(function (e, partnersActivities) {
                     partnersActivities.forEach(function (partner) {
-                        dbFunctions.activityModel.findOne({activity: partner.relation})
+                        db.activityModel.findOne({activity: partner.relation})
                             .select('parent_activity_id activity')
                             .exec(function (e, activity) {
                                 partner.relation_id = activity.parent_activity_id;
@@ -363,11 +341,11 @@ router.get('/partners/2/', function (req, res) {
 router.get('/partners/3/', function (req, res) {
     console.log('partners 3 was called.');
 
-    dbFunctions.userModel.find({})
+    db.userModel.find({})
         .select('_id first_name user partners')
         .exec(function (e, users) {
             users.forEach(function (user) {
-                dbFunctions.partnersModel.find({user: user.user})
+                db.partnersModel.find({user: user.user})
                     .exec(function (e, partners) {
                         partners.forEach(function (partner) {
                             user.partners.addToSet({
@@ -391,16 +369,16 @@ router.get('/partners/3/', function (req, res) {
 //
 router.get('/search', function (req, res) {
     console.log('search Yoga for oren');
-    dbFunctions.userModel.findOne({user: 48})
+    db.userModel.findOne({user: 48})
         .select('location')
         .exec(function (e, me) {
             console.log('orens locations is ' + me.location[0] + ', ' + me.location[1]);
-            dbFunctions.activityModel.findOne({activity: 'run'})
+            db.activityModel.findOne({activity: 'run'})
                 .select('parent_activity_id')
                 .populate('parent_activity_id')
                 .exec(function (e, activity) {
                     console.log('searching for ' + activity.parent_activity_id.activity);
-                    dbFunctions.userModel.where('activities')
+                    db.userModel.where('activities')
                         .elemMatch({$in: [activity.parent_activity_id._id]})
                         .where('user').ne(48)
                         .where('location').near({center: me.location})
@@ -421,7 +399,7 @@ router.get('/search', function (req, res) {
 //
 
 router.get('/autocomplete', function (req, res) {
-    dbFunctions.activityModel.where('activity')
+    db.activityModel.where('activity')
         .regex(new RegExp('^' + 'ru', 'i'))
         .where('parent_activity').equals(0)
         .limit(3)
@@ -439,10 +417,10 @@ router.get('/test', function (req, res) {
     /*
      //    change activiti model 'created' field to Date type.
 
-     dbFunctions.oldActivityModel.find({})
+     db.oldActivityModel.find({})
      .exec(function (e, oldActivities) {
      oldActivities.forEach(function (oldActivity) {
-     dbFunctions.activityModel.findOne({activity_id : oldActivity.activity_id})
+     db.activityModel.findOne({activity_id : oldActivity.activity_id})
      .exec( function (e, newActivity) {
      newActivity.created = new Date (oldActivity.created);
      newActivity.save( function (e) {
@@ -453,33 +431,33 @@ router.get('/test', function (req, res) {
      });
      */
     /*
-     dbFunctions.userModel.update({}, {partners: []}, {multi: true}, function (e, count, raw) {
+     db.userModel.update({}, {partners: []}, {multi: true}, function (e, count, raw) {
      console.log('hope for good');
      })
      */
 
 });
 router.get('/del/', function (req, res) {
-    dbFunctions.activityModel.remove({activity:'dog'})
+    db.activityModel.remove({activity: 'dog'})
         .exec(function (e) {
             console.log('hope for good');
         });
 
-/*
-    dbFunctions.activityModel.remove({relation: {$exists: true}}).exec(function (e, partners) {
-        console.log('hope for good');
-    })
-*/
+    /*
+     db.activityModel.remove({relation: {$exists: true}}).exec(function (e, partners) {
+     console.log('hope for good');
+     })
+     */
 
 });
 router.get('/birthday/', function (req, res) {
-    dbFunctions.oldUserModel.find({})
+    db.oldUserModel.find({})
         .select('birthday user')
-        .exec(function (e,users){
+        .exec(function (e, users) {
             users.forEach(function (user) {
-                dbFunctions.userModel.update({user:user.user},
-                    {birthday:new Date(user.birthday * 1000)},
-                    function(e,i,raw){
+                db.userModel.update({user: user.user},
+                    {birthday: new Date(user.birthday * 1000)},
+                    function (e, i, raw) {
                         console.log('update');
                     })
 
@@ -487,12 +465,84 @@ router.get('/birthday/', function (req, res) {
         });
 
 });
+router.get('/age/', function (req, res) {
+
+    db.userModel.find({})
+        .or([
+            {gender:'female'},
+            {gender:'unknown'}
+        ])
+        .exec(function (e, users) {
+            console.log(users.length);
+        });
+/*
+    db.userModel.find({})
+        .and([
+            {gender:{$ne:'female'}},
+            {gender:{$ne:'male'}}
+        ])
+        .exec(function (e, users) {
+            console.log(e);
+        });
+*/
+
+
+/*
+    db.userModel.count(function (e,c) {
+        console.log(c);
+    });
+    var count =0;
+    db.userModel
+        .where('birthday').ne(null)
+        .exec(function (e,users) {
+            users.forEach(function (user) {
+                console.log( count++);
+                user.age = db.ageCalc(user.birthday);
+                user.save();
+            });
+        //console.log(c);
+    });
+*/
+
+/*
+    db.userModel.update({"birthday":(new Date(0))},
+        {birthday:null},
+        {multi:true},
+        function (e,count,raw) {
+            console.log(count);
+        });
+*/
+
+/*
+    db.userModel
+        //.find({birthday: new ISODate("1983-08-07T21:00:00Z")})
+        .find({"birthday":(new Date(0))})
+        //.select('birthday user')
+        //.where('birthday').equals(new Date(0))
+        .exec(function (e, users) {
+            console.log('');
+*/
+/*
+            users.forEach(function (user) {
+                db.userModel.update({user: user.user},
+                    {birthday: new Date(user.birthday * 1000)},
+                    function (e, i, raw) {
+                        console.log('update');
+                    })
+
+            });
+*//*
+
+        });
+*/
+
+});
 
 //userActivities/3/ 40
 router.get('/userActivities/3/', function (req, res) {
         var index = 0;
         var max = 0;
-        dbFunctions.activityModel.find({}, function (e, docs) {
+        db.activityModel.find({}, function (e, docs) {
             for (var i = 0; i < docs.length; i++) {
                 docs[i].special = undefined;
                 docs[i].save();
@@ -502,4 +552,29 @@ router.get('/userActivities/3/', function (req, res) {
     }
 );
 
+
+/*router.get('/userlist', function (req, res) {
+
+ });
+ router.get('/user', function (req, res) {
+ var js = JSON.stringify(req.query);
+ var id = JSON.stringify(req.query.id);
+ db.UserFacebookFriendsModel.find(id).exec(function (e, users) {
+ if (!users[0]) {
+ console.log('Creating new UserFacebookFriendsModel');
+ var newUser = new db.UserFacebookFriendsModel(req.query);
+ newUser.save(function (err) {
+ if (!err)
+ res.send('success');
+ else
+ res.send('error');
+ });
+ }
+ else {
+ users[0].save(js);
+ console.log('updated');
+ }
+ });
+ }
+ );*/
 module.exports = router;

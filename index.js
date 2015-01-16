@@ -14,6 +14,7 @@ app.use(bodyParser.urlencoded({
 var chat = require('./router/chat');
 var migrate = require('./router/migrate');
 var user = require('./router/user');
+var activity = require('./router/activity');
 
 //
 
@@ -47,9 +48,15 @@ db.once('open', function () {
     dbFunctions.init(this.base);
 });
 
+//    routing
 
 app.use('/migrate/', migrate);
 app.use('/user/', user);
+//app.use('/chat/', chat);
+app.use('/activity/', activity);
+
+//
+
 app.get('/', function (req, res) {
     res.send('Hello World!')
 });

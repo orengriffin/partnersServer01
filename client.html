@@ -116,18 +116,20 @@
 <script>
     var user = parseInt(Math.random() * 100000) + '';
     $(document).ready(function () {
+
+        ageCalc(new Date('8/8/83'));
 //    var socket = io('http://localhost:3010');
-        var timeCalc    = function (then, isAge) {
+        var timeCalc = function (then, isAge) {
             then = (new Date()).getTime() - then.getTime();
 
             then /= 1000;
             var timeObj = [
-                { n: 60, s: 'Minutes' },
-                { n: 60, s: 'Hours'   },
-                { n: 24, s: 'Days'    },
-                { n: 31, s: 'Months'  },
-                { n: 12, s: 'Years'   },
-                { n: 100, s: 'Milenums'   }
+                {n: 60, s: 'Minutes'},
+                {n: 60, s: 'Hours'},
+                {n: 24, s: 'Days'},
+                {n: 31, s: 'Months'},
+                {n: 12, s: 'Years'},
+                {n: 100, s: 'Milenums'}
             ];
             for (var i = 0; true; i++) {
 
@@ -141,7 +143,7 @@
 
         var tmpD = (new Date('1/11/15')).getTime();
         var now = (new Date()).getTime();
-        console.log( timeCalc(new Date('08/08/1983'),1));
+        console.log(timeCalc(new Date('08/08/1983'), 1));
         debugger;
 
         console.log("god is a dj");
@@ -197,11 +199,22 @@
         })
     }
     function search() {
+        var params = {
+            activity     : 'yoga',
+            session      : '54ad293c8f94e3d8344883ae',
+            cb           : (new Date().getTime()),
+            min_age      : '25',
+            max_age      : '88',
+//            search_female: '1',
+            search_male  : '0'
+        };
+
         $.ajax({
-            url    : 'http://localhost:3010/migrate/search',
+            url    : 'http://localhost:3010/activity/getPartners',
 //            data   : {id:"20012147"},
-            data   : {search: "tennis"},
+            data   : params,
             success: function (res) {
+                res = JSON.parse(res);
                 console.log(res);
             },
             error  : function (res) {
@@ -224,9 +237,10 @@
     }
     function birthday() {
         $.ajax({
-            url    : 'http://localhost:3010/migrate/birthday/',
+            url    : 'http://localhost:3010/migrate/age/',
             success: function (res) {
                 console.log(res);
+                res = JSON.parse(res);
                 $(this).parent().css('background-color', 'lightgreen');
             },
             error  : function (res) {
@@ -236,10 +250,12 @@
         })
     }
     function autocomplete() {
+        var search_valu = 'yo';
         $.ajax({
-            url    : 'http://localhost:3010/migrate/autocomplete',
+            url    : 'http://localhost:3010/activity/search?activity=' + search_valu,
             success: function (res) {
                 console.log(res);
+                res = JSON.parse(res);
                 $(this).parent().css('background-color', 'lightgreen');
             },
             error  : function (res) {
@@ -296,7 +312,7 @@
 //            url    : 'http://localhost:3010/user/activities' +  '?session=54ad293c8f94e3d8344883ae',
             url    : 'http://localhost:3010/user/stranger',// +  '?cb=' + (new Date().getTime()),
             data   : {
-                user   : 17,
+                user   : 53,
                 session: '54ad293c8f94e3d8344883ae'
 //                activity_id: '2784'
 //                cb     : (new Date()).getTime(),
@@ -325,16 +341,22 @@
             }
         });
     }
-    function notifi (){
+    function notifi() {
         $.ajax({
-            url: 'http://localhost:3010/user/notification',
+            url : 'http://localhost:3010/user/notification',
             data: {
-                type: 'viaEmail',
+                type   : 'viaEmail',
                 session: '54ad293c8f94e3d8344883ae',
-                status: 1
+                status : 1
             },
             type: "POST"
         });
+    }
+    function ageCalc(birthday) {
+        var age = (new Date().getTime()) - birthday.getTime();
+        age /= 31558464000;
+        age = parseInt(age);
+        console.log('You age is ' + age);
     }
 
 </script>

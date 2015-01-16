@@ -82,6 +82,7 @@ var func = {
             email_notification: Boolean,
             platform          : String,
             last_update       : String,
+            age               : Number,
             activities        : [{type: Schema.Types.ObjectId, ref: 'activitie'}],
             partners          : [
                 {
@@ -153,7 +154,7 @@ var func = {
         console.log('sucess!');
     },
 
-    myForEach   : function (obj, callback, finish) {
+    myForEach: function (obj, callback, finish) {
         var counter = 0,
             keys = Object.keys(obj),
             length = keys.length;
@@ -193,8 +194,14 @@ var func = {
 
         return d;
     },
+    ageCalc     : function (birthday) {
+        var age = (new Date().getTime()) - birthday.getTime();
+        age /= 31558464000;
+        return parseInt(age);
+        //console.log('You age is ' + age);
+    },
 
-    timeCalc    : function (then, isAge) {
+    timeCalc: function (then) {
         if (!then)
             return '';
         then = (new Date()).getTime() - then.getTime();
@@ -206,12 +213,12 @@ var func = {
             {n: 24, s: 'Days'},
             {n: 31, s: 'Months'},
             {n: 12, s: 'Years'},
-            { n: 100, s: 'Milenums'   }
+            {n: 100, s: 'Milenums'}
         ];
         for (var i = 0; true; i++) {
             then /= timeObj[i].n;
             if (then / timeObj[i + 1].n < 1)
-                return parseInt(then) + ((!isAge) ? (' ' + timeObj[i].s + ' ago') : '')
+                return parseInt(then) + ' ' + timeObj[i].s + ' ago';
         }
 
     }

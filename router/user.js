@@ -6,12 +6,20 @@ var router = express.Router();
 var db = require('./../mymongoose');
 var async = require('async');
 
-
+function respond(res, error, message, isString) {
+    var response = {
+        error  : error,
+        code   : 0,
+        message: message
+    };
+    res.send((isString) ? JSON.stringify(response) : response);
+}
 router.post('/updateLocation/', function (req, res) {
     var paramsReceived = req.body;
     db.userModel.update({_id: paramsReceived.session}, {location: [paramsReceived.lat, paramsReceived.lon]}, function (e, count, raw) {
         if (count && !e)
-            res.send('{"message":"success"}');
+            respond(res, e, 'success', true);
+        //res.send('{"message":"success"}');
     })
 });
 
@@ -19,7 +27,7 @@ router.post('/updateToken/', function (req, res) {
     var paramsReceived = req.body;
     db.userModel.update({_id: paramsReceived.session}, {udid: paramsReceived.token}, function (e, count, raw) {
         if (count && !e)
-            res.send('{"message":"success"}');
+            respond(res, e, 'success', true);
     })
 });
 
@@ -39,7 +47,7 @@ router.get('/isPartners/', function (req, res) {
                 .elemMatch({partner_id: destUser._id})
                 .exec(function (e, user) {
                     var message = (user) ? 1 : 0;
-                    res.send('{"message":' + message + ',"code":0,"error":"' + e + '"}');
+                    respond(res, e, message, true);
                 });
         });
 });
@@ -55,7 +63,7 @@ router.post('/removePartners/', function (req, res) {
                 {$pull: {partners: {partner_id: destUser._id}}},
                 function (e, count, raw) {
                     if (!e && count)
-                        res.send('success');
+                        respond(res, e, 'success', true);
                 });
         });
 });
@@ -120,11 +128,7 @@ router.get('/getPartnersList/', function (req, res) {
             user.partners.forEach(function (partner) {
                 partnersToReturn.push(convertUser(partner.partner_id._doc));
                 if (partnersToReturn.length == this.length)
-                    res.send(JSON.stringify({
-                        code   : 0,
-                        error  : "",
-                        message: partnersToReturn
-                    }));
+                    respond(res, e, partnersToReturn, true);
             }, user.partners);
         });
 });
@@ -213,17 +217,9 @@ router.delete('/removeActivity/', function (req, res) {
             {$pull: {activities: activity}},
             function (e, c, raw) {
                 if (!e && !!c)
-                    res.send(JSON.stringify({
-                        code   : 0,
-                        error  : "",
-                        message: "success"
-                    }));
+                    respond(res, e, 'success', true);
                 else
-                    res.send(JSON.stringify({
-                        code   : 0,
-                        error  : e,
-                        message: "error"
-                    }));
+                    respond(res, e, 'error', true);
             });
     };
     if (isNaN(paramsReceived.activity_id))
@@ -273,35 +269,25 @@ router.get('/stranger/', function (req, res) {
                 });
         }
     }, function (e, r) {
-        var reply = function (isPartners) {
-            res.send(JSON.stringify({
-                code   : 0,
-                error  : "",
-                message: {
-                    image      : r.stranger.image,
-                    first_name : r.stranger.first_name,
-                    last_name  : r.stranger.last_name,
-                    last_seen  : db.timeCalc(r.stranger.last_visit, 0),
-                    location   : parseInt(db.distanceCalc(
-                        {lon: r.userLoc.location[0], lat: r.userLoc.location[1]},
-                        {longitude: r.stranger.location[0], latitude: r.stranger.location[1]})),
-                    is_online  : false,
-                    is_partners: isPartners,
-                    age        : db.timeCalc(r.stranger.birthday, 1)
+        respond(res, e, {
+            image      : r.stranger.image,
+            first_name : r.stranger.first_name,
+            last_name  : r.stranger.last_name,
+            last_seen  : db.timeCalc(r.stranger.last_visit, 0),
+            location   : parseInt(db.distanceCalc(
+                {lon: r.userLoc.location[0], lat: r.userLoc.location[1]},
+                {longitude: r.stranger.location[0], latitude: r.stranger.location[1]})),
+            is_online  : (false) ? "1" : "0",
+            is_partners: r.userLoc.partners.some(function (partner) {
+                            return partner.partner_id.equals(r.stranger._id);
+                        }) ? "1" : "0",
+            age        : String((!!r.stranger.birthday) ? db.ageCalc(r.stranger.birthday) : '')
 
-                }
-            }))
+        }, true);
+        console.log(r.userLoc.partners.some(function (partner) {
+            return partner.partner_id.equals(r.stranger._id);
+        }));
 
-        };
-        r.userLoc.partners.some(function (partner, index) {
-            if (String(partner.partner_id) == String(r.stranger._id)) {
-                console.log('partners!');
-                reply(1);
-                return true;
-            }
-            if ((index + 1) == this.length)
-                reply(0);
-        }, r.userLoc.partners);//, r.userLoc.partners);
 
     });
 
@@ -319,11 +305,7 @@ router.get('/activities/', function (req, res) {
                     activity_id: activitiyFromUser._id + ''
                 });
                 if (activitiesToReturn.length == this.length)
-                    res.send(JSON.stringify({
-                        code   : 0,
-                        error  : "",
-                        message: activitiesToReturn
-                    }));
+                    respond(res, e, activitiesToReturn, true);
 
             }, user.activities);
         });
@@ -337,6 +319,7 @@ router.post('/enterApp/', function (req, res) {
     paramsReceived.location = [paramsReceived.longitude, paramsReceived.latitude];
     paramsReceived.birthday = new Date(paramsReceived.birthday);
     paramsReceived.last_visit = new Date(Number(req.query.cb));
+    paramsReceived.age = db.ageCalc(paramsReceived.birthday);
 
     delete paramsReceived.longitude;
     delete paramsReceived.latitude;
