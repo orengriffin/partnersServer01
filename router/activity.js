@@ -24,6 +24,8 @@ function respond(res, error, message, isString) {
 //
 
 router.get('/search/', function (req, res) {
+    console.log ('auto-complete');
+
     var paramsReceived = req.query;
     var activitiesToReturn = [];
     db.activityModel.where('activity')
@@ -46,9 +48,20 @@ router.get('/search/', function (req, res) {
 
 
 router.get('/getPartners/', function (req, res) {
+    console.log ('search was called');
+
     var paramsReceived = req.query;
 
     async.parallel({
+        maxActivityId: function (callback) {
+            db.activityModel.findOne({})
+                .select('activity_id')
+                .sort('-activity_id')
+                .exec(function (e, activity) {
+                    callback(e, activity.activity_id + 1);
+                });
+        },
+
         me      : function (callback) {
             db.userModel.findById(paramsReceived.session)
                 .select('location partners')
@@ -66,78 +79,131 @@ router.get('/getPartners/', function (req, res) {
                 });
         }
     }, function (e, r) {
-        var membersToReturn = [];
-        var ageQuery = [
-            {age: {$gt: (!!Number(paramsReceived['min_age'])) ? Number(paramsReceived['min_age']) : 17}},
-            {age: {$lt: (!!Number(paramsReceived['max_age'])) ? Number(paramsReceived['max_age']) : 89}}
-        ];
-        if (ageQuery[0].age['$gt'] == 17 && ageQuery[1].age['$lt'] == 89)
-            ageQuery.push({age: null});
+        if (r.activity) {
+            var membersToReturn = [];
 
-        var genderQuery = [
-            {gender: 'female'},
-            {gender: 'unknown'},
-            {gender: 'male'}
-        ];
-        if ((typeof paramsReceived['search_female']) != 'undefined' && !Number(paramsReceived['search_female']))
-            genderQuery.shift();
+            var genderQuery = [
+                {gender: 'female'},
+                {gender: 'unknown'},
+                {gender: 'male'}
+            ];
+            if ((typeof paramsReceived['search_female']) != 'undefined' && !Number(paramsReceived['search_female']))
+                genderQuery.shift();
 
-        if ((typeof paramsReceived['search_male']) != 'undefined' && !Number(paramsReceived['search_male']))
-            genderQuery.pop();
-        console.log(genderQuery);
-        db.userModel.where('activities').elemMatch({$in: [r.activity.parent_activity_id._id]})
-            .where('_id').ne(paramsReceived.session)
-            //.or(ageQuery)
-            .and([
-                {$or: genderQuery},
-                {$and: ageQuery}
-            ])
-            .where('location').near({center: r.me.location})
-            .limit(40)
-            .exec(function (e, users) {
-                users.forEach(function (user) {
-                    var idToDell = null;
-                    var isMembers =  this.me.partners.some(function (partner) {
-                        if (!!partner.partner_id.equals(user._id)) {
-                            idToDell = partner._id;
-                            return true;
-                        }
-                        else return false
-                    });
-                    if (idToDell)
-                        this.me.partners.id(idToDell).remove();
-                    membersToReturn.push({
-                        image      : user.image,
-                        first_name : user.first_name,
-                        last_name  : user.last_name,
-                        last_seen  : db.timeCalc(user.last_visit, 0),
-                        location   : parseInt(db.distanceCalc(
-                            {lon: this.me.location[0], lat: this.me.location[1]},
-                            {longitude: user.location[0], latitude: user.location[1]})),
-                        is_online  : false,
-                        is_partners: isMembers ? 1 : 0,
-                        age        : (!!user.birthday) ? db.ageCalc(user.birthday) : ''
+            if ((typeof paramsReceived['search_male']) != 'undefined' && !Number(paramsReceived['search_male']))
+                genderQuery.pop();
 
-                    });
+            var ageQuery = [
+                {age: {$gt: (!!Number(paramsReceived['min_age'])) ? Number(paramsReceived['min_age']) : 17}},
+                {age: {$lt: (!!Number(paramsReceived['max_age'])) ? Number(paramsReceived['max_age']) : 89}}
+            ];
+            if (ageQuery[0].age['$gt'] == 17 && ageQuery[1].age['$lt'] == 89)
+                genderQuery.push({age: null});
 
-                    var str = user.last_name + ' ' + user.first_name + ' ' +
-                        user.location[0] + ', ' + user.location[1] + ' age: ' + user.age + ' gender: ' + user.gender;
-                    console.log(str);
+            console.log(genderQuery);
+            console.log(ageQuery);
+            db.userModel.where('activities').elemMatch({$in: [r.activity.parent_activity_id._id]})
+                .where('_id').ne(paramsReceived.session)
+                .and([
+                    {$or: genderQuery},
+                    {$and: ageQuery}
+                ])
+                .where('location').near({center: r.me.location})
+                .limit(40)
+                .exec(function (e, users) {
+                    if (!!users[0])
+                        users.forEach(function (user) {
+                            var idToDell = null;
+                            var isMembers = this.me.partners.some(function (partner) {
+                                if (!!partner.partner_id.equals(user._id)) {
+                                    idToDell = partner._id;
+                                    return true;
+                                }
+                                else return false
+                            });
+                            if (idToDell)
+                                this.me.partners.id(idToDell).remove();
+                            membersToReturn.push({
+                                user       : user.user,
+                                image      : user.image,
+                                first_name : user.first_name,
+                                last_name  : user.last_name,
+                                last_seen  : db.timeCalc(user.last_visit, 0),
+                                location   : db.distanceCalc(
+                                    {lon: this.me.location[0], lat: this.me.location[1]},
+                                    {longitude: user.location[0], latitude: user.location[1]}),// / 1000,
+                                is_online  : false,
+                                is_partners: isMembers ? 1 : 0,
+                                age        : (!!user.birthday) ? db.ageCalc(user.birthday) : ''
 
-                    if (membersToReturn.length == this.len) {
-                        console.log('finish');
-                        respond(res, e, {
-                            data   : this.activity,
-                            members: membersToReturn
-                        }, true);
-                    }
+                            });
 
-                }, {
-                    len     : users.length,
-                    activity: r.activity.parent_activity_id,
-                    me      : r.me
-                });
-            })
+                            var str = user.last_name + ' ' + user.first_name + ' ' +
+                                user.location[0] + ', ' + user.location[1] + ' age: ' + user.age + ' gender: ' + user.gender;
+                            console.log(str);
+
+                            if (membersToReturn.length == this.len) {
+                                console.log('finish');
+                                respond(res, e, {
+                                    status: 0,
+                                    data   : this.activity,
+                                    members: membersToReturn
+                                }, true);
+                            }
+
+                        }, {
+                            len     : users.length,
+                            activity: r.activity.parent_activity_id,
+                            me      : r.me
+                        });
+                    else
+                        respond(res,e,{
+                            status:0,
+                            members:[],
+                            data: this.activity
+                        },true);
+                })
+        }
+        else {
+            var newActivity = db.activityModel({
+                activity_id       : r.maxActivityId,
+                activity          : paramsReceived.activity,
+                parent_activity   : 0,
+                created           : new Date(),
+                icon              : null,
+                parent_activity_id: null
+            });
+            newActivity.save(function (e) {
+                db.activityModel.findOne({activity_id: r.maxActivityId})
+                    .exec(function (e, activity) {
+                        var newUserActivity = db.userActivityModel({
+                            user        : r.user.user,
+                            user_id     : paramsReceived.session,
+                            activity_id : r.maxActivityId,
+                            activity_id_: activity._id
+
+                        });
+                        newUserActivity.save();
+                        r.user.activities.addToSet(activity._id);
+                        activity.parent_activity_id = activity._id;
+                        activity.save();
+                        r.user.save();
+                        res.send(JSON.stringify({
+                            code   : 0,
+                            error  : "",
+                            message: {
+                                status:2,
+                                data  : {
+                                    activity   : paramsReceived.activity,
+                                    activity_id: activity._id
+                                },
+                                member: []
+                            }
+                        }));
+                    })
+            });
+
+        }
     });
     /*
      db.userModel.aggregate([

@@ -13,6 +13,8 @@ var func = {
     oldPartnersModel: undefined,
     partnersModel   : undefined,
 
+    settingsModel: undefined,
+
     messageModel: null,
 
     init: function (mongoose) {
@@ -148,6 +150,28 @@ var func = {
             created    : String
         });
 
+        /*
+         var oldSettingsSchema = new Schema({
+         featured_activities : String,
+         pre_login_details   : String,
+         search_base_settings: String,
+         new_partners_message: String,
+         whatsapp_message    : String,
+         facebook_message    : String,
+         first_search        : String,
+         appstore_link       : String,
+         play_link           : String
+         });
+         */
+
+        var settingsSchema = new Schema({
+            id         : Number,
+            param_name : String,
+            param_value: String
+        });
+
+        this.settingsModel = mongoose.model ('setting', settingsSchema);
+
         this.partnersModel = mongoose.model('partner', partnersSchema);
 
         //this.UserFacebookFriendsModel = mongoose.model('facebookFriend', this.userFacebookFriendsSchema);
@@ -192,7 +216,7 @@ var func = {
 
         var d = R * c * 1000;
 
-        return d;
+        return parseInt(d/10)/100;
     },
     ageCalc     : function (birthday) {
         var age = (new Date().getTime()) - birthday.getTime();

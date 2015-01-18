@@ -21,6 +21,7 @@
 <button onclick="updateLocation()"> location</button>
 <button onclick="stranger()"> stranger</button>
 <button onclick="notifi()"> notifi</button>
+<button onclick="settings()"> settings</button>
 <style type="text/css">
     .tg {
         border-collapse: collapse;
@@ -112,6 +113,17 @@
             <button>3</button>
         </td>
     </tr>
+    <tr>
+        <td class="tg-izya">settings</td>
+        <td class="tg-s6z2">
+            <button>1</button>
+
+        </td>
+        <td class="tg-s6z2">
+
+        </td>
+        <td class="tg-s6z2"></td>
+    </tr>
 </table>
 <script>
     var user = parseInt(Math.random() * 100000) + '';
@@ -144,7 +156,7 @@
         var tmpD = (new Date('1/11/15')).getTime();
         var now = (new Date()).getTime();
         console.log(timeCalc(new Date('08/08/1983'), 1));
-        debugger;
+//        debugger;
 
         console.log("god is a dj");
         $('table button').click(mainAjax);
@@ -350,6 +362,15 @@
                 status : 1
             },
             type: "POST"
+        });
+    }
+    function settings() {
+        $.ajax({
+            url : 'http://localhost:3010/settings/',
+            success: function (response) {
+                response = JSON.parse(response);
+
+            }
         });
     }
     function ageCalc(birthday) {

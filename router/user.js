@@ -107,6 +107,8 @@ router.post('/setPartners/', function (req, res) {
 });
 
 router.get('/getPartnersList/', function (req, res) {
+    console.log ('gettings partners');
+
     var paramsReceived = req.query;
     var partnersToReturn = [];
     var convertUser = function (user) {   // backwards compatibilty
@@ -142,6 +144,8 @@ router.get('/getPartnersList/', function (req, res) {
  });*/
 
 router.post('/subscribeActivity/', function (req, res) {
+    console.log ('subscribeActivity');
+
     var paramsReceived = req.body;
     async.parallel({
         maxActivityId: function (callback) {
@@ -205,12 +209,12 @@ router.post('/subscribeActivity/', function (req, res) {
                     })
             });
         }
-        //console.log();
     });
 });
 
 
 router.delete('/removeActivity/', function (req, res) {
+
     var paramsReceived = req.body;
     var removeActivity = function (activity) {
         db.userModel.update({_id: paramsReceived.session},
@@ -274,9 +278,9 @@ router.get('/stranger/', function (req, res) {
             first_name : r.stranger.first_name,
             last_name  : r.stranger.last_name,
             last_seen  : db.timeCalc(r.stranger.last_visit, 0),
-            location   : parseInt(db.distanceCalc(
+            location   : db.distanceCalc(
                 {lon: r.userLoc.location[0], lat: r.userLoc.location[1]},
-                {longitude: r.stranger.location[0], latitude: r.stranger.location[1]})),
+                {longitude: r.stranger.location[0], latitude: r.stranger.location[1]}),
             is_online  : (false) ? "1" : "0",
             is_partners: r.userLoc.partners.some(function (partner) {
                             return partner.partner_id.equals(r.stranger._id);
@@ -312,7 +316,7 @@ router.get('/activities/', function (req, res) {
 
 });
 router.post('/enterApp/', function (req, res) {
-
+    console.log('enterApp');
     var paramsReceived = req.body;
     if (!paramsReceived.fb_uid)
         res.send('no facebook id');
@@ -345,8 +349,10 @@ router.post('/enterApp/', function (req, res) {
         .exec(function (e, user) {
             if (user) { // update existing  user
                 db.myForEach(paramsReceived, function (prop, val, next) {
-                    if (val && val != 'unknown' && user[prop] != val)
+                    if (val && val != 'unknown' && user[prop] != val) {
+                        console.log ('Updating ' + prop + ' with ' + val);
                         user[prop] = val;
+                    }
                     next();
                 }, function () {
                     user.save(function (e) {
