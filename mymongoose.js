@@ -1,3 +1,6 @@
+var pub = require('./pub');
+
+
 var func = {
     UserFacebookFriendsModel: undefined,
 
@@ -14,8 +17,9 @@ var func = {
     partnersModel   : undefined,
 
     settingsModel: undefined,
-
-    messageModel: null,
+    relationModel: undefined,
+    messageModel : null,
+    pub          : null,
 
     init: function (mongoose) {
 
@@ -56,11 +60,14 @@ var func = {
         this.oldUserModel = mongoose.model('olduser', oldUserSchema);
 
         var messageSchema = new Schema({
-            sender   : {type: Schema.Types.ObjectId, ref: 'user'},
-            recipient: {type: Schema.Types.ObjectId, ref: 'user'},
-            message  : String,
-            isRead   : Boolean,
-            timeStamp: Date
+            sender      : Number,
+            sender_id   : {type: Schema.Types.ObjectId, ref: 'user'},
+            recipient   : Number,
+            recipient_id: {type: Schema.Types.ObjectId, ref: 'user'},
+            message     : String,
+            isRead      : Boolean,
+            timeStamp   : Date,
+            time        : String
         });
 
         this.messageModel = mongoose.model('message', messageSchema);
@@ -85,6 +92,12 @@ var func = {
             platform          : String,
             last_update       : String,
             age               : Number,
+            relations         : [{
+                partner_id       : {type: Schema.Types.ObjectId, ref: 'user'},
+                relation: String
+            }],
+            isOnline          : {type: Boolean, default: false},
+            newVersion        : {type: Boolean, default: false},
             activities        : [{type: Schema.Types.ObjectId, ref: 'activitie'}],
             partners          : [
                 {
@@ -170,12 +183,23 @@ var func = {
             param_value: String
         });
 
-        this.settingsModel = mongoose.model ('setting', settingsSchema);
+        this.settingsModel = mongoose.model('setting', settingsSchema);
 
+        /*       var relationsSchema = new Schema({
+         id      : Number,
+         userIdA : {type: Schema.Types.ObjectId, ref: 'user'},
+         userIdB : {type: Schema.Types.ObjectId, ref: 'user'},
+         activity: String
+         });
+
+         this.relationModel = mongoose.model('relation', relationsSchema);
+         */
         this.partnersModel = mongoose.model('partner', partnersSchema);
 
         //this.UserFacebookFriendsModel = mongoose.model('facebookFriend', this.userFacebookFriendsSchema);
+
         console.log('sucess!');
+        pub.init();
     },
 
     myForEach: function (obj, callback, finish) {
@@ -216,7 +240,7 @@ var func = {
 
         var d = R * c * 1000;
 
-        return parseInt(d/10)/100;
+        return parseInt(d / 10) / 100;
     },
     ageCalc     : function (birthday) {
         var age = (new Date().getTime()) - birthday.getTime();

@@ -6,8 +6,8 @@
         "mongoose": "*",
         "body-parser": "^1.8.1",
         "pubnub": "*",
-        "async":"*"
-
+        "async":"*",
+        "node-gcm":"*"
     },
     "subdomain": "undefined-whispering-cove-2135",
     "scripts": {

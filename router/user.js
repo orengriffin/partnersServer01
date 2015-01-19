@@ -5,6 +5,8 @@ var express = require('express');
 var router = express.Router();
 var db = require('./../mymongoose');
 var async = require('async');
+var pub = require('./../pub');
+
 
 function respond(res, error, message, isString) {
     var response = {
@@ -107,7 +109,7 @@ router.post('/setPartners/', function (req, res) {
 });
 
 router.get('/getPartnersList/', function (req, res) {
-    console.log ('gettings partners');
+    console.log('gettings partners');
 
     var paramsReceived = req.query;
     var partnersToReturn = [];
@@ -144,7 +146,7 @@ router.get('/getPartnersList/', function (req, res) {
  });*/
 
 router.post('/subscribeActivity/', function (req, res) {
-    console.log ('subscribeActivity');
+    console.log('subscribeActivity');
 
     var paramsReceived = req.body;
     async.parallel({
@@ -263,35 +265,44 @@ router.get('/stranger/', function (req, res) {
                 .exec(function (e, user) {
                     callback(e, user)
                 });
-
         },
         stranger: function (callback) {
             db.userModel.findOne({user: paramsReceived.user})
-                .select('_id first_name last_name image birthday last_visit location')
+                .select('_id first_name last_name image birthday last_visit location user relations')
                 .exec(function (e, user) {
                     callback(e, user)
                 });
         }
     }, function (e, r) {
-        respond(res, e, {
-            image      : r.stranger.image,
-            first_name : r.stranger.first_name,
-            last_name  : r.stranger.last_name,
-            last_seen  : db.timeCalc(r.stranger.last_visit, 0),
-            location   : db.distanceCalc(
-                {lon: r.userLoc.location[0], lat: r.userLoc.location[1]},
-                {longitude: r.stranger.location[0], latitude: r.stranger.location[1]}),
-            is_online  : (false) ? "1" : "0",
-            is_partners: r.userLoc.partners.some(function (partner) {
-                            return partner.partner_id.equals(r.stranger._id);
-                        }) ? "1" : "0",
-            age        : String((!!r.stranger.birthday) ? db.ageCalc(r.stranger.birthday) : '')
+        var responded = false;
+        var strangerRespond = function (relation) {
+            responded = true;
+            respond(res, e, {
+                relation     : relation,
+                user         : r.stranger.user,
+                image        : r.stranger.image,
+                first_name   : r.stranger.first_name,
+                last_name    : r.stranger.last_name,
+                two_way_trust: 1,
+                last_seen    : db.timeCalc(r.stranger.last_visit, 0),
+                location     : db.distanceCalc(
+                    {lon: r.userLoc.location[0], lat: r.userLoc.location[1]},
+                    {longitude: r.stranger.location[0], latitude: r.stranger.location[1]}),
+                is_online    : (r.stranger.isOnline) ? 1 : 0,
+                is_partners  : r.userLoc.partners.some(function (partner) {
+                    return partner.partner_id.equals(r.stranger._id);
+                }) ? 1 : 0,
+                age          : String((!!r.stranger.birthday) ? db.ageCalc(r.stranger.birthday) : '')
 
-        }, true);
-        console.log(r.userLoc.partners.some(function (partner) {
-            return partner.partner_id.equals(r.stranger._id);
-        }));
+            }, true);
 
+        };
+        r.stranger.relations.forEach(function (relation, index) {
+            if (!!relation.partner_id.equals(r.userLoc._id))
+                strangerRespond(relation.relation);
+            if (index == this.length && !responded)
+                strangerRespond('')
+        }, r.stranger.relations);
 
     });
 
@@ -318,72 +329,76 @@ router.get('/activities/', function (req, res) {
 router.post('/enterApp/', function (req, res) {
     console.log('enterApp');
     var paramsReceived = req.body;
-    if (!paramsReceived.fb_uid)
-        res.send('no facebook id');
-    paramsReceived.location = [paramsReceived.longitude, paramsReceived.latitude];
-    paramsReceived.birthday = new Date(paramsReceived.birthday);
-    paramsReceived.last_visit = new Date(Number(req.query.cb));
-    paramsReceived.age = db.ageCalc(paramsReceived.birthday);
+    if (paramsReceived.fb_uid == 'null') {
+        console.log('USER SEND A NULL FB ID');
+        res.status(500).send({message: 'no facebook id'});
+    } else {
+        paramsReceived.location = [paramsReceived.longitude, paramsReceived.latitude];
+        paramsReceived.birthday = new Date(paramsReceived.birthday);
+        paramsReceived.last_visit = new Date(Number(req.query.cb));
+        paramsReceived.age = db.ageCalc(paramsReceived.birthday);
 
-    delete paramsReceived.longitude;
-    delete paramsReceived.latitude;
+        delete paramsReceived.longitude;
+        delete paramsReceived.latitude;
 
-    var respond = function (user) {
-        res.send(
-            {
-                code   : 0,
-                message: {
+        var respond = function (user) {
+            res.send(
+                {
+                    code   : 0,
+                    message: {
 
-                    login_success: true,
-                    notifications: {
-                        email      : (user.email_notification) ? '1' : '0',
-                        new_partner: (user.notify_partner) ? '1' : '0'
-                    },
-                    uid          : user.user,
-                    session      : user._id
-                }
-            });
-
-    };
-    db.userModel.findOne({fb_uid: paramsReceived.fb_uid})
-        .exec(function (e, user) {
-            if (user) { // update existing  user
-                db.myForEach(paramsReceived, function (prop, val, next) {
-                    if (val && val != 'unknown' && user[prop] != val) {
-                        console.log ('Updating ' + prop + ' with ' + val);
-                        user[prop] = val;
+                        login_success: true,
+                        notifications: {
+                            email      : (user.email_notification) ? '1' : '0',
+                            new_partner: (user.notify_partner) ? '1' : '0'
+                        },
+                        uid          : user.user,
+                        session      : user._id + ''
                     }
-                    next();
-                }, function () {
-                    user.save(function (e) {
-                        console.log(user.first_name + ' ' + user.last_name + ' Has logged in and updated');
-                        respond(user);
-                    });
-                    console.log('finish');
-
                 });
-            }
-            else {  // create new user
-                db.userModel.findOne({})
-                    .select('user')
-                    .sort('-user')
-                    .exec(function (e, lastUser) {
-                        paramsReceived.user = lastUser.user + 1;
-                        db.userModel(paramsReceived)
-                            .save(function () {
-                                db.userModel.findOne({user: paramsReceived.user})
-                                    .select('_id first_name last_name email_notification notify_partner user')
-                                    .exec(function (e, newUser) {
-                                        console.log(newUser.first_name + ' ' + newUser.last_name + ' Has logged in and updated');
-                                        respond(newUser);
-                                    });
-                            });
+
+        };
+        db.userModel.findOne({fb_uid: paramsReceived.fb_uid})
+            .exec(function (e, user) {
+                if (user) { // update existing  user
+                    if (user.newVersion || paramsReceived.newVersion)
+                        pub.subscribe(user._id);
+                    db.myForEach(paramsReceived, function (prop, val, next) {
+                        if (val && val != 'unknown' && String(user[prop]) != String(val)) {
+                            console.log('Updating ' + prop + ' with ' + val);
+                            user[prop] = val;
+                        }
+                        next();
+                    }, function () {
+                        user.save(function (e) {
+                            console.log(user.first_name + ' ' + user.last_name + ' Has logged in and updated');
+                            respond(user);
+                        });
+                        console.log('finish');
 
                     });
-            }
+                }
+                else {  // create new user
+                    db.userModel.findOne({})
+                        .select('user')
+                        .sort('-user')
+                        .exec(function (e, lastUser) {
+                            paramsReceived.user = lastUser.user + 1;
+                            db.userModel(paramsReceived)
+                                .save(function () {
+                                    db.userModel.findOne({user: paramsReceived.user})
+                                        .select('_id first_name last_name email_notification notify_partner user')
+                                        .exec(function (e, newUser) {
+                                            console.log(newUser.first_name + ' ' + newUser.last_name + ' Has logged in and updated');
+                                            respond(newUser);
+                                        });
+                                });
 
-        });
+                        });
+                }
 
+            });
+    }
 });
 
 

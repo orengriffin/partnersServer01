@@ -45,7 +45,8 @@ router.get('/users/1/', function (req, res) {
                     last_update       : users[i].last_update,
                     age               : (!!Number(users[i].birthday)) ? db.ageCalc(new Date(Number(users[i].birthday) * 1000)) : null,
                     activities        : [],
-                    partners          : []
+                    partners          : [],
+                    relation          : []
                 });
                 newUser.save(function (e) {
                     if (!!e)
@@ -466,75 +467,86 @@ router.get('/birthday/', function (req, res) {
 
 });
 router.get('/age/', function (req, res) {
-
-    db.userModel.find({})
-        .or([
-            {gender:'female'},
-            {gender:'unknown'}
-        ])
-        .exec(function (e, users) {
-            console.log(users.length);
-        });
-/*
-    db.userModel.find({})
-        .and([
-            {gender:{$ne:'female'}},
-            {gender:{$ne:'male'}}
-        ])
-        .exec(function (e, users) {
-            console.log(e);
-        });
-*/
-
-
-/*
-    db.userModel.count(function (e,c) {
+    db.userModel.update({}, {relations: []}, {multi: true}, function (e, c, raw) {
         console.log(c);
     });
-    var count =0;
-    db.userModel
-        .where('birthday').ne(null)
-        .exec(function (e,users) {
-            users.forEach(function (user) {
-                console.log( count++);
-                user.age = db.ageCalc(user.birthday);
-                user.save();
-            });
-        //console.log(c);
+/*
+    db.userModel.update({}, {newVersion: false}, {multi: true}, function (e, c, raw) {
+        console.log(c);
     });
 */
+    /*
 
-/*
-    db.userModel.update({"birthday":(new Date(0))},
-        {birthday:null},
-        {multi:true},
-        function (e,count,raw) {
-            console.log(count);
-        });
-*/
+     db.userModel.find({})
+     .or([
+     {gender:'female'},
+     {gender:'unknown'}
+     ])
+     .exec(function (e, users) {
+     console.log(users.length);
+     });
+     */
+    /*
+     db.userModel.find({})
+     .and([
+     {gender:{$ne:'female'}},
+     {gender:{$ne:'male'}}
+     ])
+     .exec(function (e, users) {
+     console.log(e);
+     });
+     */
 
-/*
-    db.userModel
-        //.find({birthday: new ISODate("1983-08-07T21:00:00Z")})
-        .find({"birthday":(new Date(0))})
-        //.select('birthday user')
-        //.where('birthday').equals(new Date(0))
-        .exec(function (e, users) {
-            console.log('');
-*/
-/*
-            users.forEach(function (user) {
-                db.userModel.update({user: user.user},
-                    {birthday: new Date(user.birthday * 1000)},
-                    function (e, i, raw) {
-                        console.log('update');
-                    })
 
-            });
-*//*
+    /*
+     db.userModel.count(function (e,c) {
+     console.log(c);
+     });
+     var count =0;
+     db.userModel
+     .where('birthday').ne(null)
+     .exec(function (e,users) {
+     users.forEach(function (user) {
+     console.log( count++);
+     user.age = db.ageCalc(user.birthday);
+     user.save();
+     });
+     //console.log(c);
+     });
+     */
 
-        });
-*/
+    /*
+     db.userModel.update({"birthday":(new Date(0))},
+     {birthday:null},
+     {multi:true},
+     function (e,count,raw) {
+     console.log(count);
+     });
+     */
+
+    /*
+     db.userModel
+     //.find({birthday: new ISODate("1983-08-07T21:00:00Z")})
+     .find({"birthday":(new Date(0))})
+     //.select('birthday user')
+     //.where('birthday').equals(new Date(0))
+     .exec(function (e, users) {
+     console.log('');
+     */
+    /*
+     users.forEach(function (user) {
+     db.userModel.update({user: user.user},
+     {birthday: new Date(user.birthday * 1000)},
+     function (e, i, raw) {
+     console.log('update');
+     })
+
+     });
+     */
+    /*
+
+     });
+     */
 
 });
 

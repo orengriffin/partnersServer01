@@ -132,7 +132,7 @@ router.get('/getPartners/', function (req, res) {
                                 location   : db.distanceCalc(
                                     {lon: this.me.location[0], lat: this.me.location[1]},
                                     {longitude: user.location[0], latitude: user.location[1]}),// / 1000,
-                                is_online  : false,
+                                is_online  : (user.isOnline) ? 1 : 0,
                                 is_partners: isMembers ? 1 : 0,
                                 age        : (!!user.birthday) ? db.ageCalc(user.birthday) : ''
 

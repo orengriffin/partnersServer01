@@ -16,6 +16,7 @@ var migrate = require('./router/migrate');
 var user = require('./router/user');
 var activity = require('./router/activity');
 var settings = require('./router/settings');
+var pubRouter = require('./router/pubRouter');
 
 //
 
@@ -54,8 +55,9 @@ db.once('open', function () {
 app.use('/migrate/', migrate);
 app.use('/user/', user);
 app.use('/settings/', settings);
-//app.use('/chat/', chat);
+app.use('/chat/', chat);
 app.use('/activity/', activity);
+app.use('/pub/', pubRouter);
 
 //
 
