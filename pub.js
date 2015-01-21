@@ -18,15 +18,17 @@ var pubFunctions = {
 
     },
 
-    sendMsg    : function (channel, msg) {
+    sendMsg    : function (channel, msg, mainCallback) {
         this.pub.publish({
             channel : channel,
             message : msg,
             callback: function (e) {
                 console.log("SUCCESS! sending pub msg", e);
+                mainCallback(e);
             },
             error   : function (e) {
                 console.log("FAILED! RETRY PUBLISH!", e);
+                mainCallback(e);
             }
         });
 
@@ -54,7 +56,7 @@ var pubFunctions = {
     },
 
     unsubscribe: function (channel) {
-        console.log('unsubsssdf');
+        console.log('unsubscribed');
         this.pub.unsubscribe({
             channel: channel
         });

@@ -214,6 +214,14 @@ var func = {
         };
         next();
     },
+    updateLastSeend : function (id, time) {
+        this.userModel.findByIdAndUpdate(id,
+            {last_visit:new Date(time)},
+            function (e, user) {
+                console.log()
+            })
+
+    },
 
     distanceCalc: function (newLocation, oldLocation) {
         if (typeof(Number.prototype.toRad) === "undefined") {

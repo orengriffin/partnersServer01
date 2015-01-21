@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Main Client for Admin</title>
+
+    <!--Styles-->
+
+    <link rel="stylesheet" type="text/css" href="semanticUI/scripts/dropdown/dropdown.css">
+    <link rel="stylesheet" type="text/css" href="semanticUI/scripts/menu/menu.css">
+    <link rel="stylesheet" type="text/css" href="semanticUI/scripts/tab/tab.css">
+    <link rel="stylesheet" type="text/css" href="semanticUI/scripts/input/input.css">
+    <link rel="stylesheet" type="text/css" href="semanticUI/scripts/table/table.css">
+    <link rel="stylesheet" type="text/css" href="semanticUI/scripts/segment/segment.css">
+    <link rel="stylesheet" type="text/css" href="semanticUI/scripts/transition/transition.css">
+    <link rel="stylesheet" type="text/css" href="semanticUI/scripts/button/button.css">
+
+    <!--Scripts-->
+
+    <script type="text/javascript" src="../jquery-2.1.3.min.js"></script>
+    <script type="text/javascript" src="semanticUI/scripts/dropdown/index.js"></script>
+    <script type="text/javascript" src="semanticUI/scripts/dropdown/dropdown.js"></script>
+    <script type="text/javascript" src="semanticUI/scripts/tab/index.js"></script>
+    <script type="text/javascript" src="semanticUI/scripts/tab/tab.js"></script>
+    <script type="text/javascript" src="semanticUI/scripts/transition/transition.js"></script>
+    <script type="text/javascript" src="tabs/migrateClient.js"></script>
+    <script type="text/javascript" src="tabs/chatTab.js"></script>
+    <script type="text/javascript" src="msgClient.js"></script>
+
+</head>
+<body>
+
+<div class="ui secondary pointing menu">
+    <a class="item active" data-tab="chat">
+        <i class="home icon" ></i> Chat
+    </a>
+    <a class="item" data-tab="migrate">
+        <i class="mail icon"></i> Migrate
+    </a>
+
+    <a class="item">
+        <i class="user icon"></i> Activities
+    </a>
+
+    <div class="right menu">
+        <div class="item">
+            <div class="ui icon input">
+                <input type="text" placeholder="Search...">
+                <i class="search link icon"></i>
+            </div>
+        </div>
+        <a class="ui item">
+            Logout
+        </a>
+    </div>
+</div>
+
+
+<div class="ui bottom attached tab segment active" id="chat" data-tab="chat">
+</div>
+<div class="ui bottom attached tab segment" id="migrate" data-tab="migrate">
+    <!--Second-->
+</div>
+</body>
+</html>

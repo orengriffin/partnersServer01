@@ -439,7 +439,7 @@ router.get('/test', function (req, res) {
 
 });
 router.get('/del/', function (req, res) {
-    db.activityModel.remove({activity: 'dog'})
+    db.activityModel.remove({activity: 'qwe'})
         .exec(function (e) {
             console.log('hope for good');
         });

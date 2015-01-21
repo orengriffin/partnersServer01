@@ -1,0 +1,68 @@
+<!--<style>
+
+.ui.custom.sidebar {
+width: 315px !important;
+margin-left: -315px !important;
+}
+
+.ui.active.custom.sidebar {
+margin-left: 0px !important;
+}
+
+.ui.active.right.custom.sidebar {
+margin-left: -315px !important;
+}
+
+</style>-->
+
+<div class="ui input" style="">
+    Sender : <input type="text" id="sender" style="width:20px"> </input>
+    Recipient : <input type="text" id="recipient" style="width:20px">
+
+    <div class="ui selection dropdown" style="min-width:130px !important; width:120px">
+        <input type="hidden" name="saved">
+
+        <div class="default text">Save Message</div>
+        <i class="dropdown icon"></i>
+
+        <div class="menu">
+            <div class="item" data-value="1">True</div>
+            <div class="item" data-value="0">False</div>
+        </div>
+    </div>
+
+    <div class="ui selection dropdown" style="min-width:50px !important;">
+        <input type="hidden" name="notify">
+
+        <div class="default text">Type</div>
+        <i class="dropdown icon"></i>
+
+        <div class="menu">
+            <div class="item" data-value="1">PubNub</div>
+            <div class="item" data-value="0">Push</div>
+        </div>
+    </div>
+
+    <div class="ui selection dropdown" style="min-width:50px !important;">
+        <input type="hidden" name="notify">
+
+        <div class="default text">Relation</div>
+        <i class="dropdown icon"></i>
+
+        <div class="menu">
+            <div class="item" data-value="1">Yoga</div>
+            <div class="item" data-value="0">Running</div>
+        </div>
+    </div>
+
+    <input type="text" id="message" placeholder="Message">
+
+    <div id="send" class="ui primary button">
+        Send
+    </div>
+
+    <div id="response" class="ui segment">
+        Response: <br>
+    </div>
+
+</div>

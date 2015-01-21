@@ -22,8 +22,7 @@ var pubRouter = require('./router/pubRouter');
 
 var uristring =
     process.env.MONGOLAB_URI ||
-    process.env.MONGOHQ_URL ||
-    'mongodb://heroku_app31337616:obtp59dcp2qqaiushniu6ea4cu@ds049130.mongolab.com:49130/heroku_app31337616';
+    process.env.MONGOHQ_URL;
 
 app.use(bodyParser.urlencoded({extended: false}));
 

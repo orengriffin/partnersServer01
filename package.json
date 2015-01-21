@@ -7,7 +7,9 @@
         "body-parser": "^1.8.1",
         "pubnub": "*",
         "async":"*",
-        "node-gcm":"*"
+        "node-gcm":"*",
+        "apn":"*"
+
     },
     "subdomain": "undefined-whispering-cove-2135",
     "scripts": {

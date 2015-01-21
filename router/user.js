@@ -7,6 +7,18 @@ var db = require('./../mymongoose');
 var async = require('async');
 var pub = require('./../pub');
 
+router.get('/*', function (req, res, next) {
+    var paramsReceived = req.query;
+    if (typeof paramsReceived.cb != 'undefined')
+        db.updateLastSeend(paramsReceived.session, paramsReceived.cb);
+    next();
+});
+router.post('/', function (req, res, next) {
+    var paramsReceived = req.body;
+    if (typeof paramsReceived.cb != 'undefined')
+        db.updateLastSeend(paramsReceived.session, paramsReceived.cb);
+    next();
+});
 
 function respond(res, error, message, isString) {
     var response = {
@@ -57,6 +69,7 @@ router.get('/isPartners/', function (req, res) {
 router.post('/removePartners/', function (req, res) {
     var paramsReceived = req.body;
     console.log('removePartners');
+    //db.usermodel.findByIdAndUpdate(paramsReceived.session, {})
     db.userModel.findOne({user: paramsReceived.partner_id})
         .select('_id first_name')
         .exec(function (e, destUser) {
@@ -109,28 +122,51 @@ router.post('/setPartners/', function (req, res) {
 });
 
 router.get('/getPartnersList/', function (req, res) {
-    console.log('gettings partners');
+    console.log('getting partners');
 
     var paramsReceived = req.query;
     var partnersToReturn = [];
-    var convertUser = function (user) {   // backwards compatibilty
-        var locationArray = user.location;
-        delete user.location;
-        delete user._id;
-        delete user.activities;
-        delete user.partners;
-        delete user.__v;
-        user.location_longtitude = locationArray[0];
-        user.location_latitude = locationArray[1];
-        return user;
+
+    var convertUser = function (partner, me) {   // backwards compatibilty
+        var relationFound = '';
+
+        partner.relations.forEach(function (relation, index) {
+            if (String(relation.partner_id) == String(me._id))
+                relationFound = relation.relation;
+        });
+
+        var locationArray = partner.location;
+        delete partner.location;
+
+        partner.relation = relationFound;
+        partner.two_way_trust = 1;
+        partner.is_online = (partner.isOnline) ? 1 : 0;
+        partner.location_longtitude = locationArray[0];
+        partner.location_latitude = locationArray[1];
+        partner.location = db.distanceCalc(
+            {lon: me.location[0], lat: me.location[1]},
+            {longitude: locationArray[0], latitude: locationArray[1]});
+        partner.last_seen = db.timeCalc(partner.last_visit, 0);
+        partner.is_partners = 1;
+
+        delete partner._id;
+        delete partner.activities;
+        delete partner.partners;
+        delete partner.isOnline;
+        delete partner.relations;
+        delete partner.__v;
+
+        return partner;
     };
 
     db.userModel.findById(paramsReceived.session)
-        .select('partners')
+        .select('partners location')
         .populate('partners.partner_id')
         .exec(function (e, user) {
+            if (!user.partners[0])
+                respond(res, e, partnersToReturn, true);
             user.partners.forEach(function (partner) {
-                partnersToReturn.push(convertUser(partner.partner_id._doc));
+                partnersToReturn.push(convertUser(partner.partner_id._doc, user._doc));
                 if (partnersToReturn.length == this.length)
                     respond(res, e, partnersToReturn, true);
             }, user.partners);
@@ -261,7 +297,7 @@ router.get('/stranger/', function (req, res) {
     async.parallel({
         userLoc : function (callback) {
             db.userModel.findById(paramsReceived.session)
-                .select('location partners')
+                .select('location partners _id')
                 .exec(function (e, user) {
                     callback(e, user)
                 });
@@ -297,6 +333,8 @@ router.get('/stranger/', function (req, res) {
             }, true);
 
         };
+        if (!r.stranger.relations[0])
+            strangerRespond('');
         r.stranger.relations.forEach(function (relation, index) {
             if (!!relation.partner_id.equals(r.userLoc._id))
                 strangerRespond(relation.relation);
@@ -314,6 +352,8 @@ router.get('/activities/', function (req, res) {
         .select('activities')
         .populate('activities')
         .exec(function (e, user) {
+            if (!user.activities[0])
+                respond(res, e, activitiesToReturn, true);
             user.activities.forEach(function (activitiyFromUser) {
                 activitiesToReturn.push({
                     activity   : activitiyFromUser.activity,

@@ -64,7 +64,7 @@ router.get('/getPartners/', function (req, res) {
 
         me      : function (callback) {
             db.userModel.findById(paramsReceived.session)
-                .select('location partners')
+                .select('location partners user activities')
                 .exec(function (e, me) {
                     callback(e, me)
                 });
@@ -177,17 +177,17 @@ router.get('/getPartners/', function (req, res) {
                 db.activityModel.findOne({activity_id: r.maxActivityId})
                     .exec(function (e, activity) {
                         var newUserActivity = db.userActivityModel({
-                            user        : r.user.user,
+                            user        : r.me.user,
                             user_id     : paramsReceived.session,
                             activity_id : r.maxActivityId,
                             activity_id_: activity._id
 
                         });
                         newUserActivity.save();
-                        r.user.activities.addToSet(activity._id);
+                        r.me.activities.addToSet(activity._id);
                         activity.parent_activity_id = activity._id;
                         activity.save();
-                        r.user.save();
+                        r.me.save();
                         res.send(JSON.stringify({
                             code   : 0,
                             error  : "",
