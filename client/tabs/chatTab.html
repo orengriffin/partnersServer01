@@ -24,10 +24,25 @@ margin-left: -315px !important;
             Recipient :
         </label>
         <input type="text" id="recipient" style="width:20px"> </input>
+
+        <div class="ui selection dropdown" style="min-width:130px !important; width:120px">
+            <input type="hidden" name="saved">
+
+            <div class="default text">Save Message</div>
+            <i class="dropdown icon"></i>
+
+            <div class="menu">
+                <div class="item" data-value="1">True</div>
+                <div class="item" data-value="0">False</div>
+            </div>
+        </div>
+
         <div class="ui selection dropdown" style="min-width:69px !important;">
             <input type="hidden" name="notify">
+
             <div class="default text">Type</div>
             <i class="dropdown icon"></i>
+
             <div class="menu">
                 <div class="item" data-value="1">PubNub</div>
                 <div class="item" data-value="0">Push</div>
@@ -52,6 +67,7 @@ margin-left: -315px !important;
 
     <input type="text" id="message" placeholder="Message" style="margin-top: 12px; max-width: 80%">
     <br>
+
     <div id="send" class="ui primary button" style="margin-top: 12px; float:left">
         Send
     </div>
@@ -61,8 +77,8 @@ margin-left: -315px !important;
 <br>
 <br>
 
-    <div id="response" class="ui segment" style=" max-width: 80%">
-        Response: <br>
-    </div>
+<div id="response" class="ui segment" style=" max-width: 80%">
+    Response: <br>
+</div>
 
 </div>
