@@ -1,6 +1,6 @@
 {
-    "name": "Partners New Server",
-    "version": "2",
+    "name": "Partners-New-Server",
+    "version": "0.0.1-5",
     "dependencies": {
         "express": "^4.0.0",
         "mongoose": "*",

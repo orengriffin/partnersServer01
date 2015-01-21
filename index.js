@@ -5,9 +5,11 @@ var mongoose = require('mongoose');
 var bodyParser = require("body-parser");
 var dbFunctions = require('./mymongoose');
 
+/*
 app.use(bodyParser.urlencoded({
     extended: true
 }));
+*/
 
 // router
 
@@ -17,6 +19,7 @@ var user = require('./router/user');
 var activity = require('./router/activity');
 var settings = require('./router/settings');
 var pubRouter = require('./router/pubRouter');
+var login = require('./router/login');
 
 //
 
@@ -26,6 +29,7 @@ var uristring =
 
 app.use(bodyParser.urlencoded({extended: false}));
 
+app.use(express.static('client'));
 app.set('port', process.env.PORT || 3010);
 
 app.all('*', function (req, res, next) {
@@ -57,6 +61,7 @@ app.use('/settings/', settings);
 app.use('/chat/', chat);
 app.use('/activity/', activity);
 app.use('/pub/', pubRouter);
+app.use('/login/', login);
 
 //
 

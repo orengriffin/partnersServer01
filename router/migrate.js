@@ -439,11 +439,19 @@ router.get('/test', function (req, res) {
 
 });
 router.get('/del/', function (req, res) {
+    var  settings = db.settingsModel ({
+        id: 10,
+        param_name: 'naor',
+        param_value: 'admin1234'
+    });
+    settings.save();
+/*
     db.activityModel.remove({activity: 'qwe'})
         .exec(function (e) {
             console.log('hope for good');
         });
 
+*/
     /*
      db.activityModel.remove({relation: {$exists: true}}).exec(function (e, partners) {
      console.log('hope for good');

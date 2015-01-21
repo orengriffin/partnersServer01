@@ -3,6 +3,8 @@
  */
 function initMigrate() {
     $('table button').click(mainAjax);
+    bar = new Nanobar({bg: '#000'});
+
 
 }
 function mainAjax() {
@@ -37,6 +39,9 @@ function mainAjax() {
         }
     })
 }
+var timeOut = 0;
+var bar = null;
+
 
 function stopBar() {
     if (!!timeOut) {
