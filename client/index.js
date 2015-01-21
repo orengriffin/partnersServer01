@@ -18,7 +18,7 @@ $( document ).ready(function() {
         initUsersTab();
     });
 
-    console.log(process.env.PUBNUB_PUBLISH_KEY);
+    //console.log(process.env.PUBNUB_PUBLISH_KEY);
 
     $("#password").keyup(function(event){
         if(event.keyCode == 13){

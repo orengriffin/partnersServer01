@@ -13,9 +13,9 @@ var pubFunctions = {
             ssl          : true,
             uuid         : 'partnersServer',
             //publish_key  : 'pub-c-7d87a3c4-b1b8-4d33-be38-43b78065bc90',
+            //subscribe_key: 'sub-c-9d63a2c0-9665-11e4-9a03-02ee2ddab7fe'
             publish_key  : process.env.PUBNUB_PUBLISH_KEY,
             subscribe_key: process.env.PUBNUB_SUBSCRIBE_KEY
-            //subscribe_key: 'sub-c-9d63a2c0-9665-11e4-9a03-02ee2ddab7fe'
         });
 
     },
@@ -86,6 +86,11 @@ var pubFunctions = {
                 console.log('server received message. channel : ' + channel);
                 console.log(m);
             },
+/*
+            presence: function (m) {
+              console.log(m);
+            },
+*/
             connect: function () {
                 console.log('subcribed');
                 //callback(true);
