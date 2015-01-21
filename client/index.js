@@ -14,6 +14,9 @@ $( document ).ready(function() {
     $("#chat").load('tabs/chatTab.html', function () {
         initChatTab();
     });
+    $("#users").load('tabs/usersTab.html', function () {
+        initUsersTab();
+    });
 
 
     $("#password").keyup(function(event){

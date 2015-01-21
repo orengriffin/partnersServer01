@@ -7,14 +7,15 @@
     <!--Styles-->
 
     <link rel="stylesheet" type="text/css" href="semanticUI/scripts/dropdown/dropdown.css">
-    <link rel="stylesheet" type="text/css" href="semanticUI/scripts/menu/menu.css">
-    <link rel="stylesheet" type="text/css" href="semanticUI/scripts/tab/tab.css">
-    <link rel="stylesheet" type="text/css" href="semanticUI/scripts/input/input.css">
-    <link rel="stylesheet" type="text/css" href="semanticUI/scripts/table/table.css">
-    <link rel="stylesheet" type="text/css" href="semanticUI/scripts/segment/segment.css">
-    <link rel="stylesheet" type="text/css" href="semanticUI/scripts/transition/transition.css">
-    <link rel="stylesheet" type="text/css" href="semanticUI/scripts/button/button.css">
-    <link rel="stylesheet" type="text/css" href="semanticUI/scripts/form/form.css">
+    <link rel="stylesheet" type="text/css" href="semanticUI/scripts/menu/menu.min.css">
+    <link rel="stylesheet" type="text/css" href="semanticUI/scripts/tab/tab.min.css">
+    <link rel="stylesheet" type="text/css" href="semanticUI/scripts/input/input.min.css">
+    <link rel="stylesheet" type="text/css" href="semanticUI/scripts/table/table.min.css">
+    <link rel="stylesheet" type="text/css" href="semanticUI/scripts/segment/segment.min.css">
+    <link rel="stylesheet" type="text/css" href="semanticUI/scripts/transition/transition.min.css">
+    <link rel="stylesheet" type="text/css" href="semanticUI/scripts/button/button.min.css">
+    <link rel="stylesheet" type="text/css" href="semanticUI/scripts/form/form..min.css">
+    <link rel="stylesheet" type="text/css" href="semanticUI/scripts/list/list.min.css">
 
     <!--Scripts-->
 
@@ -29,29 +30,32 @@
     <script type="text/javascript" src="tabs/chatTab.js"></script>
     <script type="text/javascript" src="index.js"></script>
     <script type="text/javascript" src="nanobar.min.js"></script>
+    <script type="text/javascript" src="pubnub.min.js"></script>
 
 
 </head>
 <body>
 
 <style>
-    #login{
-        height:100%;
-        width:100%;
-        background-color: rgba(200,200,200,0.5);
+    #login {
+        height: 100%;
+        width: 100%;
+        background-color: rgba(200, 200, 200, 0.5);
         position: fixed;
         z-index: 100;
     }
-    #formLogin{
-        margin:auto;
+
+    #formLogin {
+        margin: auto;
         position: fixed;
-        left:50%;
-        top:50%;
-        transform: translate(-50%,-50%);
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
 
     }
+
     #loginBut {
-        margin-top:10px ;
+        margin-top: 10px;
     }
 </style>
 <div id="login">
@@ -80,6 +84,9 @@
     </a>
 
     <a class="item">
+        <i class="user icon" data-tab="users"></i> Users
+    </a>
+    <a class="item">
         <i class="user icon"></i> Activities
     </a>
 
@@ -97,10 +104,13 @@
 </div>
 
 
-<div class="ui bottom attached tab segment active" id="chat" data-tab="chat" style =" max-width: 80%">
+<div class="ui bottom attached tab segment active" id="chat" data-tab="chat" style=" max-width: 80%">
 </div>
 <div class="ui bottom attached tab segment" id="migrate" data-tab="migrate">
     <!--Second-->
+</div>
+<div class="ui bottom attached tab segment" id="users" data-tab="users">
+    <!--Third-->
 </div>
 </body>
 </html>
