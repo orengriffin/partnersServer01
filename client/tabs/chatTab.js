@@ -67,7 +67,7 @@ function onSend() {
      */
     if (canSend)
         $.ajax({
-            url    : document.URL + '/chat/sendMessage/dev',
+            url    : document.URL + 'chat/sendMessage/dev',
             //url    : 'http://localhost:3010/chat/sendMessage/dev',
             type   : 'POST',
             data   : {
