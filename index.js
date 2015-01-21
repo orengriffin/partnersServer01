@@ -22,7 +22,7 @@ var pubRouter = require('./router/pubRouter');
 
 var uristring =
     process.env.MONGOLAB_URI ||
-    process.env.MONGOHQ_URL;
+    process.env.MONGOHQ_URL ;
 
 app.use(bodyParser.urlencoded({extended: false}));
 

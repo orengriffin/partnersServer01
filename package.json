@@ -1,6 +1,6 @@
 {
-    "name": "application-name",
-    "version": "0.0.1-5",
+    "name": "Partners New Server",
+    "version": "2",
     "dependencies": {
         "express": "^4.0.0",
         "mongoose": "*",
