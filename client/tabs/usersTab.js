@@ -49,9 +49,15 @@ function returnRow(name) {
     if (!!$('#' + nameArray[0])[0]) return;
     name = nameArray[1] + ' ' + nameArray[2];
     var row = $('<div>').addClass('item').attr('id', nameArray[0]);
+    var image = $('<img>')
+        .addClass('ui')
+        .addClass('avatar')
+        .addClass('image')
+        .attr('src','https://graph.facebook.com/'+nameArray[0] +'/picture');
     var content = $('<div>').addClass('content');
     var header = $('<div>').addClass('header').html(name);
     content.append(header);
+    row.append(image);
     row.append(content);
     return row;
 }
