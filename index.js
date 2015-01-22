@@ -6,10 +6,10 @@ var bodyParser = require("body-parser");
 var dbFunctions = require('./mymongoose');
 
 /*
-app.use(bodyParser.urlencoded({
-    extended: true
-}));
-*/
+ app.use(bodyParser.urlencoded({
+ extended: true
+ }));
+ */
 
 // router
 
@@ -20,12 +20,12 @@ var activity = require('./router/activity');
 var settings = require('./router/settings');
 var pubRouter = require('./router/pubRouter');
 var login = require('./router/login');
+var prelogin = require('./router/prelogin');
 
 //
 
 var uristring =
-    process.env.MONGOLAB_URI ||
-    process.env.MONGOHQ_URL ;
+    process.env.MONGOLAB_URI;
 
 app.use(bodyParser.urlencoded({extended: false}));
 
@@ -62,6 +62,7 @@ app.use('/chat/', chat);
 app.use('/activity/', activity);
 app.use('/pub/', pubRouter);
 app.use('/login/', login);
+app.use('/getPreLoginSettings/', prelogin);
 
 //
 

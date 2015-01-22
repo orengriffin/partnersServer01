@@ -14,7 +14,7 @@ function mainAjax() {
     var self = this;
 //        debugger;
     $.ajax({
-        url    : 'http://localhost:3010/migrate/' + first + '/' + which + '/',
+        url    : document.URL + 'migrate/' + first + '/' + which + '/',
 //            data: user,
         timeout: 600000,
         success: function (res) {

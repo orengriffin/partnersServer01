@@ -274,6 +274,8 @@ var func = {
         for (var i = 0; true; i++) {
             then /= timeObj[i].n;
             if (then / timeObj[i + 1].n < 1)
+                if ( parseInt(then) == 1 )
+                    return parseInt(then) + ' ' + timeObj[i].s.slice(0,-1) + ' ago';
                 return parseInt(then) + ' ' + timeObj[i].s + ' ago';
         }
 

@@ -22,6 +22,7 @@
 <button onclick="stranger()"> stranger</button>
 <button onclick="notifi()"> notifi</button>
 <button onclick="settings()"> settings</button>
+<button onclick="getPreLoginSettings()"> getPreLoginSettings</button>
 <style type="text/css">
     .tg {
         border-collapse: collapse;
@@ -367,6 +368,14 @@
     function settings() {
         $.ajax({
             url : 'http://localhost:3010/settings/',
+            success: function (response) {
+                response = JSON.parse(response);
+
+            }
+        });
+    }    function getPreLoginSettings() {
+        $.ajax({
+            url : 'http://localhost:3010/getPreLoginSettings/',
             success: function (response) {
                 response = JSON.parse(response);
 
