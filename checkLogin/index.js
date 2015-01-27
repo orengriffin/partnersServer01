@@ -3,22 +3,7 @@
  */
 $( document ).ready(function() {
     console.log( "ready!" );
-    $('.menu .item').tab();
-    $('.item').click(menuClick);
 
-    // load Tabs
-    $("#migrate").load('tabs/migrate.html', function () {
-        initMigrate();
-    });
-
-    $("#chat").load('tabs/chatTab.html', function () {
-        initChatTab();
-    });
-    $("#users").load('tabs/usersTab.html', function () {
-        initUsersTab();
-    });
-
-    //console.log(process.env.PUBNUB_PUBLISH_KEY);
 
     $("#password").keyup(function(event){
         if(event.keyCode == 13){
@@ -50,21 +35,16 @@ function login (){
                 username: userName,
                 password :password
             },
+
             success: function (response) {
-                if (response == 'success')
-                    $('#login').fadeOut();
+                if (response.code == 'success')
+                    $('#login').fadeOut(function ()
+                    {
+                        console.log('succes for     ');
+                        window.location.replace(document.URL + "admin?token="+response.token);
+                        //window.location.href = document.URL + "admin?token="+response.token;
+                    });
             }
 
         })
-}
-function menuClick () {
-    //debugger;
-    //$('.segment.active').fadeIn();
-
-    /*    if(! ($(this)).hasClass('active')) {
-            $('.active').removeClass('active');
-            $(this).addClass('active');
-            debugger;
-            $('.segment .active').transition();
-        }*/
 }

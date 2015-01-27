@@ -12,8 +12,10 @@ var pubFunctions = {
         this.pub = require("pubnub")({
             ssl          : true,
             uuid         : 'partnersServer',
-            publish_key  : process.env.PUBNUB_PUBLISH_KEY,
-            subscribe_key: process.env.PUBNUB_SUBSCRIBE_KEY
+            publish_key  : 'pub-c-78bc252c-b8e5-4093-877e-bf52f7d24963',
+            subscribe_key: 'sub-c-540acdd2-96a2-11e4-ae17-02ee2ddab7fe'
+            //publish_key  : process.env.PUBNUB_PUBLISH_KEY,
+            //subscribe_key: process.env.PUBNUB_SUBSCRIBE_KEY
         });
 
     },
@@ -64,7 +66,7 @@ var pubFunctions = {
     },
     hereNow    : function (channel, hereNowCallback) {
         this.pub.here_now({
-            channel : channel,
+            channel : String(channel),
             callback: function (m) {
                 console.log('here now told me ' + m);
                 //console.log('user is:' + !!r.recipient.isOnline);
@@ -89,7 +91,7 @@ var pubFunctions = {
               console.log(m);
             },
 */
-            connect: function () {
+            connect: function (m) {
                 console.log('subcribed');
                 //callback(true);
                 /*

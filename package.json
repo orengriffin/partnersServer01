@@ -1,21 +1,22 @@
 {
-    "name": "Partners-New-Server",
-    "version": "0.0.1-5",
-    "dependencies": {
-        "express": "^4.0.0",
-        "mongoose": "*",
-        "body-parser": "^1.8.1",
-        "pubnub": "*",
-        "async":"*",
-        "node-gcm":"*",
-        "apn":"*"
+  "name": "Partners-New-Server",
+  "version": "0.0.1-5",
+  "dependencies": {
+    "express": "^4.0.0",
+    "mongoose": "*",
+    "body-parser": "^1.8.1",
+    "pubnub": "*",
+    "async": "*",
+    "node-gcm": "*",
+    "apn": "*",
+    "rand-token" : "*"
 
-    },
-    "subdomain": "undefined-whispering-cove-2135",
-    "scripts": {
-        "start": "node index.js"
-    },
-    "engines": {
-        "node": "0.10.x"
-    }
+  },
+  "subdomain": "undefined-whispering-cove-2135",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": "0.10.x"
+  }
 }

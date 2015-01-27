@@ -4,6 +4,7 @@
 var express = require('express');
 var router = express.Router();
 var db = require('./../mymongoose');
+var utils = require('./../utils');
 
 
 router.get('/get', function (req, res) {
@@ -43,8 +44,9 @@ router.get('/users/1/', function (req, res) {
                     email_notification: users[i].email_notification,
                     platform          : users[i].platform,
                     last_update       : users[i].last_update,
-                    age               : (!!Number(users[i].birthday)) ? db.ageCalc(new Date(Number(users[i].birthday) * 1000)) : null,
+                    age               : (!!Number(users[i].birthday)) ? utils.ageCalc(new Date(Number(users[i].birthday) * 1000)) : null,
                     activities        : [],
+                    blockUsers          : [],
                     partners          : [],
                     relation          : []
                 });
@@ -439,19 +441,39 @@ router.get('/test', function (req, res) {
 
 });
 router.get('/del/', function (req, res) {
+/*
     var  settings = db.settingsModel ({
         id: 10,
         param_name: 'naor',
         param_value: 'admin1234'
     });
     settings.save();
+*/
+    db.userModel.update({user:17},{partners:[]}, function (e, c, raw) {
+        console.log(c);
+    });
+    db.userModel.update({user:17},{relations:[]}, function (e, c, raw) {
+        console.log(c);
+    });
+    db.userModel.update({user:48},{partners:[]}, function (e, c, raw) {
+        console.log(c);
+    });
+    db.userModel.update({user:48},{relations:[]}, function (e, c, raw) {
+        console.log(c);
+    });
 /*
-    db.activityModel.remove({activity: 'qwe'})
+    db.userModel.find({user:48})
+            .exec(function (e,user) {
+        console.log(user[0].last_visit);
+        });
+*/
+
+/*
         .exec(function (e) {
             console.log('hope for good');
         });
-
 */
+
     /*
      db.activityModel.remove({relation: {$exists: true}}).exec(function (e, partners) {
      console.log('hope for good');
@@ -475,7 +497,7 @@ router.get('/birthday/', function (req, res) {
 
 });
 router.get('/age/', function (req, res) {
-    db.userModel.update({}, {relations: []}, {multi: true}, function (e, c, raw) {
+    db.userModel.update({}, {blockedUsers: []}, {multi: true}, function (e, c, raw) {
         console.log(c);
     });
 /*

@@ -1,37 +1,29 @@
 var express = require('express');
 var router = express.Router();
 var db = require('./../mymongoose');
+var utils = require('./../utils');
 var pub = require('./../pub');
 var async = require('async');
 var gcm = require('node-gcm');
 var apn = require('apn');
+var ObjectId = require('mongoose').Types.ObjectId;
 //var GCM = require('gcm').GCM;
-
-router.get('/', function (req, res) {
-    var paramsReceived = req.query;
-    if (typeof paramsReceived.cb != 'undefined')
-        db.updateLastSeend(paramsReceived.session, paramsReceived.cb)
-});
-router.post('/', function (req, res) {
-    var paramsReceived = req.body;
-    if (typeof paramsReceived.cb != 'undefined')
-        db.updateLastSeend(paramsReceived.session, paramsReceived.cb)
-});
 
 
 router.get('/getHistory', function (req, res) {
     var user_id = req.query.session;
     db.messageModel.aggregate([
             {
+                //$match:{isRead:  false}
                 $match: {
-                    $or: [
-                        {isRead: {$ne: true}}
-                        ,
-                        {recipient_id: user_id}
+                    $and: [
+                        {isRead: false},
+                        {recipient_id: ObjectId(user_id)},
+                        {isBlocked: false}
                     ]
                 }
-            }
-            ,
+            },
+
             {
                 $project: {
                     id     : "$_id",
@@ -55,6 +47,7 @@ router.post('/appendCompleted', function (req, res) {
     var messages = req.body.messages.split(',');
     console.log('messages');
     var count = 0;
+
     messages.forEach(function (id) {
         var length = this.length;
         db.messageModel.findByIdAndUpdate(id,
@@ -68,7 +61,7 @@ router.post('/appendCompleted', function (req, res) {
     }, messages);
 });
 
-function msgObj(msg, sender, relation, senderModel, isForground) {
+function msgObj(msg, sender, relation, senderModel, isForeground) {
     var objToReturn = {
         data      : {
             creation: parseInt(new Date().getTime() / 1000),
@@ -80,12 +73,12 @@ function msgObj(msg, sender, relation, senderModel, isForground) {
         title     : (relation) ? '#' + relation : 'unknown',
         ticketText: "",
         vibrate   : "1",
-        message   : senderModel.first_name + ' ' + senderModel.last_name + ':' + msg
+        message   : senderModel.first_name + ' ' + senderModel.last_name + ': ' + msg
     };
-    if (isForground)
+    if (isForeground)
         objToReturn.foreground = '1';
     return objToReturn
-};
+}
 
 function oldTime(date) {
     var oldDate = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate();
@@ -97,7 +90,7 @@ function oldTime(date) {
     console.log(strRtn);
     return strRtn;
 
-};
+}
 
 function sendNotification(recipient, sender, message, relation, callback) {
     if (recipient.platform.toLowerCase() == 'android') {
@@ -134,19 +127,20 @@ function sendNotification(recipient, sender, message, relation, callback) {
         };
 
         apnConnection.pushNotification(note, myDevice);
+        callback();
 
         //apn.Connection({}).pushNotification(new apn.Notification(), new apn.Device(recipient.udid) );
         console.log('ios');
     }
 
-};
+}
 
 router.post('/sendMessage/dev', function (req, res) {
     var paramsReceived = req.body;
     async.parallel({
         recipient: function (callback) {
             db.userModel.findOne({user: paramsReceived.recipient})
-                .select('platform newVersion isOnline udid _id first_name user relations')
+                .select('platform newVersion isOnline udid _id first_name user relations blockedUsers newVersion')
                 .exec(function (e, recipient) {
                     callback(e, recipient);
                 });
@@ -160,6 +154,7 @@ router.post('/sendMessage/dev', function (req, res) {
 
         }
     }, function (e, r) {
+        var isBLocked = (r.recipient.blockedUsers) ? (r.recipient.blockedUsers.indexOf(r.sender._id) != -1) : false;
 
         if (paramsReceived.toSave)
             var newMessage = db.messageModel({
@@ -169,8 +164,9 @@ router.post('/sendMessage/dev', function (req, res) {
                 recipient_id: r.recipient._id,
                 message     : paramsReceived.message,
                 isRead      : false,
+                isBlocked   : isBLocked,
                 timeStamp   : Date.now(),
-                time        : oldTime(new Date())
+                time        : (r.recipient.newVersion) ? oldTime(new Date(Number(paramsReceived.cb))) : oldTime(new Date(Number(paramsReceived.cb) - 7200000))
             });
         ['recipient', 'sender'].forEach(function (user, index) {
             var self = this;
@@ -224,7 +220,7 @@ router.post('/sendMessage/dev', function (req, res) {
                     });
 
             if (paramsReceived.type == 'PubNub')
-                pub.sendMsg(r.recipient._id, msgObj(paramsReceived.message, r.sender.user, null, true),
+                pub.sendMsg(r.recipient._id, msgObj(paramsReceived.message, r.sender.user, null, true, true),
                     function (e) {
                         if (!e)
                             res.send('Message sent through PubNub');
@@ -239,88 +235,21 @@ router.post('/sendMessage/dev', function (req, res) {
 
 });
 router.post('/sendMessage/', function (req, res) {
+
     var paramsReceived = req.body;
-    async.parallel({
-        recipient: function (callback) {
-            db.userModel.findOne({user: paramsReceived.user_id})
-                .select('platform newVersion isOnline udid _id first_name user relations')
-                .exec(function (e, recipient) {
-                    callback(e, recipient);
-                });
-        },
-        sender   : function (callback) {
-            db.userModel.findById(paramsReceived.session)
-                .select('user _id relations first_name last_name')
-                .exec(function (e, sender) {
-                    callback(e, sender);
-                });
+    paramsReceived.message = decodeURI(paramsReceived.message);
 
-        }
-    }, function (e, r) {
-        var newMessage = db.messageModel({
-            sender      : r.sender.user,
-            sender_id   : r.sender._id,
-            recipient   : r.recipient.user,
-            recipient_id: r.recipient._id,
-            message     : paramsReceived.message,
-            isRead      : false,
-            timeStamp   : Date.now(),
-            time        : oldTime(new Date())
-        });
-        ['recipient', 'sender'].forEach(function (user, index) {
-            var self = this;
-            var test = !(r[user].relations.some(function (partner) {
-                if (!!partner.partner_id.equals(r[self[(index) ? 0 : 1]]._id)) {
-                    partner.relation = paramsReceived.relation;
-                    return true
-                }
-                return false
-            }));
-            console.log(test);
-            if (test)
-                r[user].relations.addToSet({
-                    partner_id: r[self[(index) ? 0 : 1]]._id,
-                    relation  : paramsReceived.relation
-                });
-            r[user].save(function (e) {
-                console.log(e);
-            });
-
-
-        }, ['recipient', 'sender']);
-
-        //r.sender.relations.addToSet();
-        async.parallel({
-            isSaved           : function (callback) {
-                newMessage.save(function (e) {
-                    console.log('message save: ' + !e);
-                    callback(e, !e);
-                });
-            },
-            isRecipeientOnline: function (parallelCallback) {
-                pub.hereNow(r.recipient._id, function (isOnline) {
-                    if (r.recipient.isOnline != isOnline) {
-                        console.log('good thing i used here now');
-                        db.userModel.update({_id: r.recipient._id}, {isOnline: isOnline});
-                    }
-                    else console.log('here now shouldnt have been used');
-                    parallelCallback(null, isOnline);
-                });
-            }
-        }, function (e, secondResults) {
-
-            if (secondResults.isSaved && secondResults.isRecipeientOnline) {
-                console.log('sendPubNub');
-                pub.sendMsg(r.recipient._id, msgObj(paramsReceived.message, r.sender.user, null, true))
-            }
-            else
-                sendNotification(r.recipient, r.sender, paramsReceived.message, paramsReceived.relation)
-        });
-
-
-    });
-
+    utils.sendMessage(paramsReceived, res);
 });
+
+function respond(res, error, message, isString) {
+    var response = {
+        error  : error,
+        code   : 0,
+        message: message
+    };
+    res.send((isString) ? JSON.stringify(response) : response);
+}
 module.exports = router;
 
 

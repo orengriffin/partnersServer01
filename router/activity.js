@@ -6,6 +6,7 @@
 var express = require('express');
 var router = express.Router();
 var db = require('./../mymongoose');
+var utils = require('./../utils');
 var async = require('async');
 
 function respond(res, error, message, isString) {
@@ -24,31 +25,79 @@ function respond(res, error, message, isString) {
 //
 
 router.get('/search/', function (req, res) {
-    console.log ('auto-complete');
+    console.log('auto-complete');
 
     var paramsReceived = req.query;
     var activitiesToReturn = [];
-    db.activityModel.where('activity')
-        .regex(new RegExp('^' + paramsReceived.activity, 'i'))
-        .where('parent_activity').equals(0)
-        .select('activity activity_id created parent_activity')
-        .limit(3)
-        .exec(function (e, activities) {
-            activities.forEach(function (activity, index) {
-                activitiesToReturn.push(activity._doc);
-                delete activitiesToReturn[index]._id;
-                console.log(activity.activity + ' ' + activity.parent_activity + ' ' + activity.activity_id);
-                if (activitiesToReturn.length == this.length)
-                    respond(res, '', activitiesToReturn, true);
+    db.activityModel.aggregate([
+        {$match: {activity: {$regex: new RegExp('^' + paramsReceived.activity, 'i')}}},
+        {
+            $group: {
+                _id: {parent: "$parent_activity"},
+                act: {$push: {activity: "$activity", activity_id: '$activity_id'}}
+                //parent: '$parent_activity'
 
-            }, activities);
+            }
+        },
+        {$project: {act: 1, parent_activity: 1}},
+        {$sort:{"_id.parent":1}}
+    ])
+        //.match({activity:})
+        //.where('activity')
+        //.regex(new RegExp('^' + paramsReceived.activity, 'i'))
+        //.where('parent_activity').equals(0)
+        //.select('activity activity_id created parent_activity')
+        .limit(10)
+        .exec(function (e, activities) {
+            var arrOfAcvitivities = [], mainIndex = 0;
+            if (mainIndex != 3)
+                activities.some(function (activity, index) {
+                    if (!index && !activity._id.parent)
+                        activities[0].act.some(function (activity) {
+                            arrOfAcvitivities.push(activity.activity_id);
+                            if (arrOfAcvitivities.length == 3)
+                                return true;
+                        });
+                    else
+                    if (arrOfAcvitivities.length < 3) {
+                        if (arrOfAcvitivities.indexOf(activity._id.parent) == -1)
+                            arrOfAcvitivities.push(activity._id.parent);
+                        if (arrOfAcvitivities.length == 3)
+                            return true;
+                    }
+                    /*
+                     activitiesToReturn.push(activity._doc);
+                     delete activitiesToReturn[index]._id;
+                     console.log(activity.activity + ' ' + activity.parent_activity + ' ' + activity.activity_id);
+                     if (activitiesToReturn.length == this.length)
+                     respond(res, '', activitiesToReturn, true);
+                     */
+
+                }, activities);
+            if (arrOfAcvitivities[0])
+            {
+                var arrToQuery = [];
+                arrOfAcvitivities.forEach(function (activity) {
+                    arrToQuery.push({activity_id:activity})
+                });
+
+                db.activityModel.find({$or: arrToQuery})
+                    .select('activity activity_id created parent_activity')
+                    .exec(function (e, activities) {
+
+                        console.log(e);
+                        respond(res, '', activities, true);
+                });
+            }
+            else respond(res, '', [], true)
+
         });
 
 });
 
 
 router.get('/getPartners/', function (req, res) {
-    console.log ('search was called');
+    console.log('search was called');
 
     var paramsReceived = req.query;
 
@@ -80,11 +129,17 @@ router.get('/getPartners/', function (req, res) {
         }
     }, function (e, r) {
         if (r.activity) {
+
+            r.me.activities.addToSet(r.activity.parent_activity_id._id);
+            r.me.save(function (e) {
+                console.log('added activity after search' + e);
+            });
+
             var membersToReturn = [];
 
             var genderQuery = [
                 {gender: 'female'},
-                {gender: 'unknown'},
+                //{gender: 'unknown'},
                 {gender: 'male'}
             ];
             if ((typeof paramsReceived['search_female']) != 'undefined' && !Number(paramsReceived['search_female']))
@@ -97,17 +152,23 @@ router.get('/getPartners/', function (req, res) {
                 {age: {$gt: (!!Number(paramsReceived['min_age'])) ? Number(paramsReceived['min_age']) : 17}},
                 {age: {$lt: (!!Number(paramsReceived['max_age'])) ? Number(paramsReceived['max_age']) : 89}}
             ];
-            if (ageQuery[0].age['$gt'] == 17 && ageQuery[1].age['$lt'] == 89)
+
+            var andQuery = [{$or: genderQuery},
+                {$and: ageQuery}
+            ];
+            if (ageQuery[0].age['$gt'] == 17 && ageQuery[1].age['$lt'] == 89) {
                 genderQuery.push({age: null});
+                andQuery.pop();
+
+            }
 
             console.log(genderQuery);
             console.log(ageQuery);
+            console.log(andQuery);
+
             db.userModel.where('activities').elemMatch({$in: [r.activity.parent_activity_id._id]})
                 .where('_id').ne(paramsReceived.session)
-                .and([
-                    {$or: genderQuery},
-                    {$and: ageQuery}
-                ])
+                .and(andQuery)
                 .where('location').near({center: r.me.location})
                 .limit(40)
                 .exec(function (e, users) {
@@ -128,13 +189,13 @@ router.get('/getPartners/', function (req, res) {
                                 image      : user.image,
                                 first_name : user.first_name,
                                 last_name  : user.last_name,
-                                last_seen  : db.timeCalc(user.last_visit, 0),
-                                location   : db.distanceCalc(
+                                last_seen  : (user.isOnline) ? " " : utils.timeCalc(user.last_visit, 0),
+                                location   : utils.distanceCalc(
                                     {lon: this.me.location[0], lat: this.me.location[1]},
                                     {longitude: user.location[0], latitude: user.location[1]}),// / 1000,
                                 is_online  : (user.isOnline) ? 1 : 0,
                                 is_partners: isMembers ? 1 : 0,
-                                age        : (!!user.birthday) ? db.ageCalc(user.birthday) : ''
+                                age        : (!!user.birthday) ? utils.ageCalc(user.birthday) : ''
 
                             });
 
@@ -145,7 +206,7 @@ router.get('/getPartners/', function (req, res) {
                             if (membersToReturn.length == this.len) {
                                 console.log('finish');
                                 respond(res, e, {
-                                    status: 0,
+                                    status : 0,
                                     data   : this.activity,
                                     members: membersToReturn
                                 }, true);
@@ -157,11 +218,11 @@ router.get('/getPartners/', function (req, res) {
                             me      : r.me
                         });
                     else
-                        respond(res,e,{
-                            status:0,
-                            members:[],
-                            data: this.activity
-                        },true);
+                        respond(res, e, {
+                            status : 0,
+                            members: [],
+                            data   : this.activity
+                        }, true);
                 })
         }
         else {
@@ -192,7 +253,7 @@ router.get('/getPartners/', function (req, res) {
                             code   : 0,
                             error  : "",
                             message: {
-                                status:2,
+                                status: 2,
                                 data  : {
                                     activity   : paramsReceived.activity,
                                     activity_id: activity._id
@@ -205,46 +266,6 @@ router.get('/getPartners/', function (req, res) {
 
         }
     });
-    /*
-     db.userModel.aggregate([
-     { $match : { "birthday" : { $exists : true} } },
-     { $match: { "activities" : {$in: [r.activity.parent_activity_id._id]} } },
-     //{ $project : {"ageInMillis" : {$multiply : ["$birthday"] } } },
-     { $project : {"ageInMillis" : {$subtract : [new Date(), "$birthday"] } , "first_name": 1, "last_name": 1} },
-     { $project : {"age" : {$divide : ["$ageInMillis", 31558464000] }}},
-     // take the floor of the previous number:
-     { $project : {"age" : {$subtract : ["$age", {$mod : ["$age",1]}]} }}
-     //{ $project : {"first_name": 1, "last_name": 1}}
-     //{ $group : { _id : "$age", Total : { $sum : 1} } }
-     ])
-     */
-    //console.log('search Yoga for oren');
-    /*
-     db.userModel.findById(paramsReceived.session)
-     .select('location')
-     .exec(function (e, me) {
-     //console.log('orens locations is ' + me.location[0] + ', ' + me.location[1]);
-     db.activityModel.findOne({activity: paramsReceived.activity})
-     .select('parent_activity_id')
-     .populate('parent_activity_id')
-     .exec(function (e, activity) {
-     console.log('searching for ' + activity.parent_activity_id.activity);
-     db.userModel.where('activities')
-     .elemMatch({$in: [activity.parent_activity_id._id]})
-     .where('user').ne(48)
-     .where('location').near({center: me.location})
-     .limit(40)
-     .exec(function (e, users) {
-     users.forEach(function (user) {
-     var str = user.last_name + ' ' + user.first_name + ' ' +
-     user.location[0] + ', ' + user.location[1];
-     console.log(str);
-     });
-     })
-     });
-     });
-     */
-
 
 });
 

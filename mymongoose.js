@@ -65,6 +65,7 @@ var func = {
             recipient   : Number,
             recipient_id: {type: Schema.Types.ObjectId, ref: 'user'},
             message     : String,
+            isBlocked   : Boolean,
             isRead      : Boolean,
             timeStamp   : Date,
             time        : String
@@ -93,9 +94,10 @@ var func = {
             last_update       : String,
             age               : Number,
             relations         : [{
-                partner_id       : {type: Schema.Types.ObjectId, ref: 'user'},
-                relation: String
+                partner_id: {type: Schema.Types.ObjectId, ref: 'user'},
+                relation  : String
             }],
+            blockedUsers      : [{type: Schema.Types.ObjectId, ref: 'user'}],
             isOnline          : {type: Boolean, default: false},
             newVersion        : {type: Boolean, default: false},
             activities        : [{type: Schema.Types.ObjectId, ref: 'activitie'}],
@@ -202,84 +204,15 @@ var func = {
         pub.init();
     },
 
-    myForEach: function (obj, callback, finish) {
-        var counter = 0,
-            keys = Object.keys(obj),
-            length = keys.length;
-        var next = function () {
-            if (counter < length)
-                callback(keys[counter], obj[keys[counter++]], next);
-            else
-                finish();
-        };
-        next();
-    },
-    updateLastSeend : function (id, time) {
+
+    updateLastSeen: function (id, time) {
         this.userModel.findByIdAndUpdate(id,
-            {last_visit:new Date(time)},
+            {last_visit: new Date(Number(time))},
             function (e, user) {
                 console.log()
             })
 
     },
-
-    distanceCalc: function (newLocation, oldLocation) {
-        if (typeof(Number.prototype.toRad) === "undefined") {
-            Number.prototype.toRad = function () {
-                return this * Math.PI / 180;
-            }
-        }
-        var lat1 = newLocation.lat;
-        var lon1 = newLocation.lon;
-        var lon2 = oldLocation.longitude;
-        var lat2 = oldLocation.latitude;
-
-
-        var R = 6371; // km
-        var φ1 = lat1.toRad();
-        var φ2 = lat2.toRad();
-        var Δφ = (lat2 - lat1).toRad();
-        var Δλ = (lon2 - lon1).toRad();
-
-        var a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-            Math.cos(φ1) * Math.cos(φ2) *
-            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-        var d = R * c * 1000;
-
-        return parseInt(d / 10) / 100;
-    },
-    ageCalc     : function (birthday) {
-        var age = (new Date().getTime()) - birthday.getTime();
-        age /= 31558464000;
-        return parseInt(age);
-        //console.log('You age is ' + age);
-    },
-
-    timeCalc: function (then) {
-        if (!then)
-            return '';
-        then = (new Date()).getTime() - then.getTime();
-
-        then /= 1000;
-        var timeObj = [
-            {n: 60, s: 'Minutes'},
-            {n: 60, s: 'Hours'},
-            {n: 24, s: 'Days'},
-            {n: 31, s: 'Months'},
-            {n: 12, s: 'Years'},
-            {n: 100, s: 'Milenums'}
-        ];
-        for (var i = 0; true; i++) {
-            then /= timeObj[i].n;
-            if (then / timeObj[i + 1].n < 1)
-                if ( parseInt(then) == 1 )
-                    return parseInt(then) + ' ' + timeObj[i].s.slice(0,-1) + ' ago';
-                return parseInt(then) + ' ' + timeObj[i].s + ' ago';
-        }
-
-    }
 };
 
 module.exports = func;

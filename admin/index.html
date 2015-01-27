@@ -16,6 +16,7 @@
     <link rel="stylesheet" type="text/css" href="semanticUI/scripts/button/button.min.css">
     <link rel="stylesheet" type="text/css" href="semanticUI/scripts/form/form.min.css">
     <link rel="stylesheet" type="text/css" href="semanticUI/scripts/list/list.min.css">
+    <link rel="stylesheet" type="text/css" href="slick/slick.css">
 
     <!--Scripts-->
 
@@ -32,78 +33,44 @@
     <script type="text/javascript" src="index.js"></script>
     <script type="text/javascript" src="nanobar.min.js"></script>
     <script type="text/javascript" src="pubnub.min.js"></script>
+    <script type="text/javascript" src="slick/slick.min.js"></script>
 
 
 </head>
 <body>
 
 <style>
-    #login {
-        height: 100%;
-        width: 100%;
-        background-color: rgba(200, 200, 200, 0.5);
-        position: fixed;
-        z-index: 100;
-    }
 
-    #formLogin {
-        margin: auto;
-        position: fixed;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-
-    }
-
-    #loginBut {
-        margin-top: 10px;
-    }
     .ui.secondary.pointing.menu {
-        margin-left:auto;
-        margin-right:auto;
+        margin-left: auto;
+        margin-right: auto;
 
     }
-    .ui.bottom.attached.tab.segment
-    {
+
+    .ui.bottom.attached.tab.segment {
         max-width: 80%;
-        margin-left:auto;
-        margin-right:auto;
+        margin-left: auto;
+        margin-right: auto;
     }
-    .ui.bottom.tab.segment
-    {
+
+    .ui.bottom.tab.segment {
         max-width: 80%;
-        margin-left:auto;
-        margin-right:auto;
+        margin-left: auto;
+        margin-right: auto;
     }
 
 </style>
-<div id="login">
-    <div id="formLogin" class="ui small form segment">
-        <div class="two fields">
-            <div class="field">
-                <label>User Name</label>
-                <input id="userName" placeholder="User Name" type="text">
-            </div>
-            <div class="field">
-                <label>Password</label>
-                <input id="password" placeholder="Password" type="password">
-            </div>
-        </div>
-        <div id="loginBut" class="ui submit button">Submit</div>
-    </div>
-</div>
-
 
 <div class="ui secondary pointing menu" style=" max-width: 80%">
-    <a class="item active" data-tab="chat">
+    <a class="item active" data-tab="chat" slickTab = '0'>
         <i class="home icon"></i> Chat
     </a>
-    <a class="item" data-tab="migrate">
+    <a class="item" data-tab="migrate" slickTab = '1'>
         <i class="mail icon"></i> Migrate
     </a>
 
-    <a class="item" data-tab="users">
-        <i class="user icon" ></i> Users
+    <a class="item" data-tab="users" slickTab = '2'>
+        <i class="user icon"></i> Users
     </a>
     <a class="item">
         <i class="user icon"></i> Activities
@@ -122,13 +89,14 @@
     </div>
 </div>
 
-
-<div class="ui bottom tab segment active" id="chat" data-tab="chat" >
+<div class="slick" style="padding-left: 10%;padding-right: 10% ">
+    <div class="ui bottom tab segment" id="chat" data-tab="chat">
+    </div>
+    <div class="ui bottom tab segment" id="migrate" data-tab="migrate">
+        <!--Second-->
+    </div>
+    <div class="ui bottom tab segment" id="users" data-tab="users">
+        <!--Third--></div>
 </div>
-<div class="ui bottom tab segment" id="migrate" data-tab="migrate">
-    <!--Second-->
-</div>
-<div class="ui bottom tab segment" id="users" data-tab="users">
-    <!--Third--></div>
 </body>
 </html>

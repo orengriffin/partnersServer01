@@ -67,7 +67,7 @@ function onSend() {
      */
     if (canSend)
         $.ajax({
-            url    : document.URL + 'chat/sendMessage/dev',
+            url    : document.URL.split('admin')[0] + 'chat/sendMessage/dev',
             //url    : 'http://localhost:3010/chat/sendMessage/dev',
             type   : 'POST',
             data   : {
@@ -76,10 +76,11 @@ function onSend() {
                 type     : type,
                 toSave   : (save == 'True'),
                 message: message,
-                relation: relation
+                relation: relation,
+                cb: (new Date().getTime())
             },
             success: function (response) {
-                $('#response').append(' <br>' + response + ' <br>');
+                $('#response').prepend(' <br>' + response + ' <br>');
 
 
             }

@@ -4,26 +4,34 @@
 var express = require('express');
 var router = express.Router();
 var db = require('./../mymongoose');
+var utils = require('./../utils');
 var async = require('async');
 var pub = require('./../pub');
 
-router.get('/*', function (req, res, next) {
-    var paramsReceived = req.query;
-    if (typeof paramsReceived.cb != 'undefined')
-        db.updateLastSeend(paramsReceived.session, paramsReceived.cb);
-    next();
-});
-router.post('/', function (req, res, next) {
-    var paramsReceived = req.body;
-    if (typeof paramsReceived.cb != 'undefined')
-        db.updateLastSeend(paramsReceived.session, paramsReceived.cb);
-    next();
-});
+/*
+ router.get('*/
+/*', function (req, res, next) {
+ var paramsReceived = req.query;
+ if (typeof paramsReceived.cb != 'undefined')
+ db.updateLastSeen(paramsReceived.session, paramsReceived.cb);
+ next();
+ });
+ router.post('*/
+/*', function (req, res, next) {
+ var paramsReceived = req.body;
+ if (typeof paramsReceived.cb != 'undefined')
+ db.updateLastSeen(paramsReceived.session, paramsReceived.cb);
+ paramsReceived = req.query;
+ if (typeof paramsReceived.cb != 'undefined')
+ db.updateLastSeen(paramsReceived.session, paramsReceived.cb);
+ next();
+ });
+ */
 
-function respond(res, error, message, isString) {
+function respond(res, error, message, isString, code) {
     var response = {
         error  : error,
-        code   : 0,
+        code   : (code) ? 1 : 0,
         message: message
     };
     res.send((isString) ? JSON.stringify(response) : response);
@@ -68,20 +76,69 @@ router.get('/isPartners/', function (req, res) {
 
 router.post('/removePartners/', function (req, res) {
     var paramsReceived = req.body;
+
     console.log('removePartners');
-    //db.usermodel.findByIdAndUpdate(paramsReceived.session, {})
-    db.userModel.findOne({user: paramsReceived.partner_id})
-        .select('_id first_name')
-        .exec(function (e, destUser) {
-            console.log(destUser.first_name);
-            db.userModel.update({_id: paramsReceived.session},
-                {$pull: {partners: {partner_id: destUser._id}}},
-                function (e, count, raw) {
-                    if (!e && count)
-                        respond(res, e, 'success', true);
+    async.parallel({
+        me: function (callback) {
+            db.userModel.findById(paramsReceived.session)
+                .exec(function (e, me) {
+                    callback(e,me);
+                })
+        },
+        partnerToRemove : function (callback) {
+            db.userModel.findOne({user: paramsReceived.partner_id})
+                //.select('_id first_name')
+                .exec(function (e, destUser) {
+                    callback(e,destUser);
                 });
-        });
-});
+
+        }
+    }, function (e, r) {
+        var deleteRelations = function (me,paramPartner,callback) {
+            var idToDell = null;
+            me.relations.some(function (partner) {
+                if (!!partner.partner_id.equals(paramPartner._id)) {
+                    idToDell = partner._id;
+                    return true;
+                }
+                else return false
+            });
+            if (idToDell) {
+                me.relations.id(idToDell).remove();
+                me.save(function (e) {
+                    callback(e,!e);
+                })
+
+            }
+            else callback (null, false);
+
+        };
+        async.parallel({
+            myRelations: function (callback) {
+                deleteRelations(r.me, r.partnerToRemove,callback);
+            },
+            partnerRelations: function (callback) {
+                deleteRelations( r.partnerToRemove, r.me,callback);
+
+            },
+            removePartnerFromMe : function (callback) {
+                db.userModel.update({_id: r.me._id},
+                    {$pull: {partners: {partner_id: r.partnerToRemove._id}}},
+                    function (e, count, raw) {
+                        callback(e,!!count);
+                    });
+
+            }
+
+        }, function (e, secondResults) {
+            var str = "my relations update :" + secondResults.myRelations +
+                " partners relations updated: " + secondResults.partnerRelations +
+            " partner removed from my partners: "+ secondResults.removePartnerFromMe;
+            console.log(str);
+            respond(res,e,'success',true);
+        })
+    });
+ });
 router.post('/setPartners/', function (req, res) {
     var paramsReceived = req.body;
     var time = new Date(Number(req.query.cb));
@@ -130,10 +187,11 @@ router.get('/getPartnersList/', function (req, res) {
     var convertUser = function (partner, me) {   // backwards compatibilty
         var relationFound = '';
 
-        partner.relations.forEach(function (relation, index) {
-            if (String(relation.partner_id) == String(me._id))
-                relationFound = relation.relation;
-        });
+        //if (partner.relations)
+            partner.relations.forEach(function (relation) {
+                if (String(relation.partner_id) == String(me._id))
+                    relationFound = relation.relation;
+            });
 
         var locationArray = partner.location;
         delete partner.location;
@@ -143,10 +201,10 @@ router.get('/getPartnersList/', function (req, res) {
         partner.is_online = (partner.isOnline) ? 1 : 0;
         partner.location_longtitude = locationArray[0];
         partner.location_latitude = locationArray[1];
-        partner.location = db.distanceCalc(
+        partner.location = utils.distanceCalc(
             {lon: me.location[0], lat: me.location[1]},
             {longitude: locationArray[0], latitude: locationArray[1]});
-        partner.last_seen = db.timeCalc(partner.last_visit, 0);
+        partner.last_seen = utils.timeCalc(partner.last_visit, 0);
         partner.is_partners = 1;
 
         delete partner._id;
@@ -247,6 +305,22 @@ router.post('/subscribeActivity/', function (req, res) {
                     })
             });
         }
+        else {
+            r.user.activities.addToSet(r.activityID);
+            r.user.save(function (e) {
+                res.send(JSON.stringify({
+                    code   : 0,
+                    error  : "",
+                    message: {
+                        pack: {
+                            activity   : paramsReceived.activity,
+                            activity_id: r.activityID
+                        }
+                    }
+                }));
+
+            })
+        }
     });
 });
 
@@ -282,14 +356,27 @@ router.post('/notification/', function (req, res) {
         db.userModel.update({_id: paramsReceived.session},
             {notify_partner: !!Number(paramsReceived.status)},
             function (e, c, raw) {
-                console.log('updated');
+                if (!e && c) {
+                    console.log('updated');
+                    respond(res, e, "success", true);
+                }
+                else
+                    respond(res, e, "error", true);
+
             });
-    if (paramsReceived.type == 'viaEmail')
+    else if (paramsReceived.type == 'viaEmail')
         db.userModel.update({_id: paramsReceived.session},
             {email_notification: !!Number(paramsReceived.status)},
             function (e, c, raw) {
-                console.log('updated');
+                if (!e && c) {
+                    console.log('updated');
+                    respond(res, e, "success", true);
+                }
+                else
+                    respond(res, e, "error", true);
+
             });
+    else res.statusCode(404);
 });
 
 router.get('/stranger/', function (req, res) {
@@ -297,14 +384,14 @@ router.get('/stranger/', function (req, res) {
     async.parallel({
         userLoc : function (callback) {
             db.userModel.findById(paramsReceived.session)
-                .select('location partners _id')
+                .select('location partners _id blockedUsers')
                 .exec(function (e, user) {
                     callback(e, user)
                 });
         },
         stranger: function (callback) {
             db.userModel.findOne({user: paramsReceived.user})
-                .select('_id first_name last_name image birthday last_visit location user relations')
+                .select('_id first_name last_name image birthday last_visit location user relations isOnline')
                 .exec(function (e, user) {
                     callback(e, user)
                 });
@@ -320,27 +407,31 @@ router.get('/stranger/', function (req, res) {
                 first_name   : r.stranger.first_name,
                 last_name    : r.stranger.last_name,
                 two_way_trust: 1,
-                last_seen    : db.timeCalc(r.stranger.last_visit, 0),
-                location     : db.distanceCalc(
+                last_seen    : (r.stranger.isOnline) ? " " : utils.timeCalc(r.stranger.last_visit, 0),
+                location     : utils.distanceCalc(
                     {lon: r.userLoc.location[0], lat: r.userLoc.location[1]},
                     {longitude: r.stranger.location[0], latitude: r.stranger.location[1]}),
                 is_online    : (r.stranger.isOnline) ? 1 : 0,
                 is_partners  : r.userLoc.partners.some(function (partner) {
                     return partner.partner_id.equals(r.stranger._id);
                 }) ? 1 : 0,
-                age          : String((!!r.stranger.birthday) ? db.ageCalc(r.stranger.birthday) : '')
+                age          : String((!!r.stranger.birthday) ? utils.ageCalc(r.stranger.birthday) : ''),
+                isBlocked    : (r.userLoc.blockedUsers.indexOf(r.stranger._id) != -1)
 
             }, true);
 
         };
-        if (!r.stranger.relations[0])
-            strangerRespond('');
-        r.stranger.relations.forEach(function (relation, index) {
-            if (!!relation.partner_id.equals(r.userLoc._id))
-                strangerRespond(relation.relation);
-            if (index == this.length && !responded)
-                strangerRespond('')
-        }, r.stranger.relations);
+        if (r.stranger) {
+            if (!r.stranger.relations[0])
+                strangerRespond('');
+            r.stranger.relations.forEach(function (relation, index) {
+                if (!!relation.partner_id.equals(r.userLoc._id))
+                    strangerRespond(relation.relation);
+                if (index == this.length && !responded)
+                    strangerRespond('')
+            }, r.stranger.relations);
+        }
+        else strangerRespond('');
 
     });
 
@@ -376,7 +467,8 @@ router.post('/enterApp/', function (req, res) {
         paramsReceived.location = [paramsReceived.longitude, paramsReceived.latitude];
         paramsReceived.birthday = new Date(paramsReceived.birthday);
         paramsReceived.last_visit = new Date(Number(req.query.cb));
-        paramsReceived.age = db.ageCalc(paramsReceived.birthday);
+        paramsReceived.age = utils.ageCalc(paramsReceived.birthday);
+        paramsReceived.isOnline = true;
 
         delete paramsReceived.longitude;
         delete paramsReceived.latitude;
@@ -403,7 +495,7 @@ router.post('/enterApp/', function (req, res) {
                 if (user) { // update existing  user
                     if (user.newVersion || paramsReceived.newVersion)
                         pub.subscribe(user._id);
-                    db.myForEach(paramsReceived, function (prop, val, next) {
+                    utils.myForEach(paramsReceived, function (prop, val, next) {
                         if (val && val != 'unknown' && String(user[prop]) != String(val)) {
                             console.log('Updating ' + prop + ' with ' + val);
                             user[prop] = val;
@@ -429,7 +521,7 @@ router.post('/enterApp/', function (req, res) {
                                     db.userModel.findOne({user: paramsReceived.user})
                                         .select('_id first_name last_name email_notification notify_partner user')
                                         .exec(function (e, newUser) {
-                                            console.log(newUser.first_name + ' ' + newUser.last_name + ' Has logged in and updated');
+                                            console.log(newUser.first_name + ' ' + newUser.last_name + ' Added to DB');
                                             respond(newUser);
                                         });
                                 });
@@ -439,6 +531,105 @@ router.post('/enterApp/', function (req, res) {
 
             });
     }
+});
+
+router.post('/blockUser', function (req, res) {
+
+    var paramsReceived = req.body;
+
+    async.parallel({
+        me         : function (callback) {
+            db.userModel.findById(paramsReceived.session)
+                .exec(function (e, user) {
+                    callback(e, user);
+                });
+        },
+        userToBlock: function (callback) {
+            db.userModel.findOne({user: paramsReceived.user_id})
+                .exec(function (e, user) {
+                    callback(e, user);
+                });
+
+        }
+    }, function (e, r) {
+
+
+        var indexOfBlocked = r.me.blockedUsers.indexOf(r.userToBlock._id);
+
+        if (indexOfBlocked != -1) {
+            async.parallel({
+                removingBlockFromUser    : function (callback) {
+                    db.userModel.update({_id: r.me._id},
+                        {$pull: {blockedUsers: r.userToBlock._id}},
+                        function (e, c, raw) {
+                            callback(null, (!e && c));
+                        });
+
+                },
+                removingBlockFromMessages: function (callback) {
+                    db.messageModel.update({
+                            $and: [
+                                {recipient_id: r.me._id},
+                                {sender_id: r.userToBlock._id}
+                            ]
+                        },
+                        {isBlocked: false},
+                        {multi: true},
+                        function (e, c, raw) {
+                            callback(e, !e);
+                        });
+
+                },
+                firstMessage             : function (callback) {
+                    db.messageModel.findOne({
+                        $and: [
+                            {recipient_id: r.me._id},
+                            {sender_id: r.userToBlock._id},
+                            {isRead: false}
+                        ]
+                    })
+                        .sort('timeStamp')
+                        .exec(function (e, message) {
+                            callback(e, message);
+                        });
+                },
+                relation                 : function (callback) {
+                    var relationToReturn = null;
+                    r.me.relations.some(function (relation) {
+                        if (String(relation.partner_id) == String(r.userToBlock._id)) {
+                            relationToReturn = relation.relation;
+                            return true
+                        }
+                    });
+                    callback(e, relationToReturn);
+                }
+            }, function (e, secondResults) {
+                if (secondResults.removingBlockFromMessages && secondResults.removingBlockFromUser) {
+                    if (secondResults.firstMessage)
+                        utils.sendMessage({
+                            session : secondResults.firstMessage.sender_id,
+                            user_id : r.me.user,
+                            message : secondResults.firstMessage.message,
+                            relation: secondResults.relation
+                        }, res, true);
+                    else
+                        respond(res, e, 'success', true);
+                }
+
+            });
+        }
+        else {
+            r.me.blockedUsers.push(r.userToBlock._id);
+            r.me.save(function (e) {
+                if (!e)
+                    respond(res, e, 'success', true);
+                else
+                    respond(res, e, 'error', true, 1);
+
+
+            })
+        }
+    });
 });
 
 
