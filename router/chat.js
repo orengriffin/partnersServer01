@@ -140,14 +140,14 @@ router.post('/sendMessage/dev', function (req, res) {
     async.parallel({
         recipient: function (callback) {
             db.userModel.findOne({user: paramsReceived.recipient})
-                .select('platform newVersion isOnline udid _id first_name user relations blockedUsers newVersion')
+                .select('platform newVersion isOnline udid _id first_name user partners blockedUsers newVersion')
                 .exec(function (e, recipient) {
                     callback(e, recipient);
                 });
         },
         sender   : function (callback) {
             db.userModel.findOne({user: paramsReceived.sender})
-                .select('user _id relations first_name last_name')
+                .select('user _id partners first_name last_name')
                 .exec(function (e, sender) {
                     callback(e, sender);
                 });
@@ -170,18 +170,18 @@ router.post('/sendMessage/dev', function (req, res) {
             });
         ['recipient', 'sender'].forEach(function (user, index) {
             var self = this;
-            var test = !(r[user].relations.some(function (partner) {
+            var test = !(r[user].partners.some(function (partner) {
                 if (!!partner.partner_id.equals(r[self[(index) ? 0 : 1]]._id)) {
-                    partner.relation = paramsReceived.relation;
+                    partner.activity_relation = r.activityId;
                     return true
                 }
                 return false
             }));
             console.log(test);
             if (test)
-                r[user].relations.addToSet({
+                r[user].partners.addToSet({
                     partner_id: r[self[(index) ? 0 : 1]]._id,
-                    relation  : paramsReceived.relation
+                    activity_relation  :r.activityId
                 });
             r[user].save(function (e) {
                 console.log(e);

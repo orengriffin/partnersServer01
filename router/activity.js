@@ -65,13 +65,6 @@ router.get('/search/', function (req, res) {
                         if (arrOfAcvitivities.length == 3)
                             return true;
                     }
-                    /*
-                     activitiesToReturn.push(activity._doc);
-                     delete activitiesToReturn[index]._id;
-                     console.log(activity.activity + ' ' + activity.parent_activity + ' ' + activity.activity_id);
-                     if (activitiesToReturn.length == this.length)
-                     respond(res, '', activitiesToReturn, true);
-                     */
 
                 }, activities);
             if (arrOfAcvitivities[0])
@@ -113,7 +106,7 @@ router.get('/getPartners/', function (req, res) {
 
         me      : function (callback) {
             db.userModel.findById(paramsReceived.session)
-                .select('location partners user activities')
+                .select('location partners user activities blockedUsers')
                 .exec(function (e, me) {
                     callback(e, me)
                 });
@@ -195,7 +188,8 @@ router.get('/getPartners/', function (req, res) {
                                     {longitude: user.location[0], latitude: user.location[1]}),// / 1000,
                                 is_online  : (user.isOnline) ? 1 : 0,
                                 is_partners: isMembers ? 1 : 0,
-                                age        : (!!user.birthday) ? utils.ageCalc(user.birthday) : ''
+                                age        : (!!user.birthday) ? utils.ageCalc(user.birthday) : '',
+                                isBlocked  : this.me.blockedUsers.indexOf(user.id) != -1
 
                             });
 

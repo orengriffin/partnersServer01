@@ -91,6 +91,117 @@ function sendNotification(recipient, sender, message, relation, callback) {
 
 }
 var func = {
+    db  : null,
+    pub : null,
+    init: function () {
+        this.db = require('./mymongoose');
+        this.pub = require('./pub');
+    },
+
+    tellPartnersNewDistance: function (id, lat, lon) {
+        var localPub = this.pub;
+        var self = this;
+        async.parallel({
+            me: function (callback) {
+                self.db.userModel.findById(id)
+                    .select('user fbuid location')
+                    .exec(function (e, user) {
+                        callback(e, user);
+                    })
+            },
+            partners: function (callback) {
+                self.db.userModel.find()
+                    .select('partners newVersion isOnline fb_uid first_name')
+                    .where('isOnline').equals(true)
+                    .where('partners').ne([])
+                    .where('partners.partner_id').equals(id)
+                    .where('newVersion').equals(true)
+                    .exec(function (e, partners) {
+                    });
+            }
+        }, function (e, r) {
+            r.partners.forEach(function (partner) {
+                localPub.sendMsg(partner.id, {
+                    distance: self.distanceCalc({
+                            lat: Number(lat),
+                            lon: Number(lon)
+                        },
+                        {
+                            latitude : this.location[0],
+                            longitude: this.location[1]
+                        }),
+                    user    : this.user,
+                    fbid    : this.fb_uid
+                })
+            }, r.me)
+
+        });
+
+/*
+        this.db.userModel.findById(id)
+            .select('user fbuid location')
+            .exec(function (e, me) {
+                self.db.userModel.find()
+                    .select('partners newVersion isOnline fb_uid first_name')
+                    .where('isOnline').equals(true)
+                    .where('partners').ne([])
+                    .where('partners.partner_id').equals(id)
+                    .where('newVersion').equals(true)
+                    .exec(function (e, partners) {
+                        partners.forEach(function (partner) {
+                                localPub.sendMsg(partner.id, {
+                                    distance: self.distanceCalc({
+                                            lat: Number(lat),
+                                            lon: Number(lon)
+                                        },
+                                        {
+                                            latitude : this.location[0],
+                                            longitude: this.location[1]
+                                        }),
+                                    user    : this.user,
+                                    fbid    : this.fb_uid
+                                })
+                        }, me)
+                    });
+             })
+*/
+
+    },
+
+    tellPartnersOnlineStatus: function (id, isOnline) {
+        var localPub = this.pub;
+        var self = this;
+        async.parallel({
+            me: function (callback) {
+                self.db.userModel.findById(id)
+                    .select('user id fb_uid')
+                    .exec(function (e, user) {
+                        callback(e, user);
+                    })
+            },
+            partners: function (callback) {
+                        self.db.userModel.find()
+                            .where('isOnline').equals(true)
+                            .where('partners').ne([])
+                            .select('partners newVersion fb_uid first_name isOnline')
+                            .where('partners.partner_id').equals(id)
+                            .where('newVersion').equals(true)
+                            .exec(function (e, users) {
+                                callback(e,users);
+                            });
+            }
+        }, function (e, r) {
+            r.partners.forEach(function (partner) {
+                //if (partner.isOnline && partner.newVersion)
+                localPub.sendMsg(partner.id, {
+                    online: isOnline,
+                    fbid  : this.fb_uid,
+                    user : this.user
+                })
+            }, r.me)
+
+        });
+    },
 
     myForEach: function (obj, callback, finish) {
         var counter = 0,
@@ -130,8 +241,9 @@ var func = {
         var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
         var d = R * c * 1000;
-
-        return parseInt(d / 10) / 100;
+        if ((d / 100) <= 1)
+            return 1 / 100;
+        return ( (d / 100) < 10 ) ? (parseInt(d) / 100) : (parseInt(d / 10) / 100);
     },
 
     ageCalc: function (birthday) {
@@ -183,27 +295,36 @@ var func = {
 
     sendMessage: function (paramsReceived, res, notToSave) {
         {
+            var self = this ;
             async.parallel({
+                activityId: function (callback) {
+                    self.db.activityModel.findOne({activity: paramsReceived.relation})
+                        .select('parent_activity_id')
+                        .exec(function (e, activity) {
+                            callback(e, activity.parent_activity_id)
+                        });
+                },
                 recipient: function (callback) {
-                    db.userModel.findOne({user: paramsReceived.user_id})
-                        .select('platform newVersion isOnline udid _id first_name user relations blockedUsers newVersion')
+                    self.db.userModel.findOne({user: paramsReceived.user_id})
+                        .select('platform newVersion isOnline udid _id first_name user partners blockedUsers newVersion')
                         .exec(function (e, recipient) {
                             callback(e, recipient);
                         });
                 },
                 sender   : function (callback) {
-                    db.userModel.findById(paramsReceived.session)
-                        .select('user _id relations first_name last_name')
+                    self.db.userModel.findById(paramsReceived.session)
+                        .select('user _id relations first_name last_name partners')
                         .exec(function (e, sender) {
                             callback(e, sender);
                         });
 
                 }
-            }, function (e, r) {
+            }, function (e, r)
+            {
 
-                var isBLocked =  (r.recipient.blockedUsers) ? (r.recipient.blockedUsers.indexOf(r.sender._id) != -1) : false;
+                var isBLocked = (r.recipient.blockedUsers) ? (r.recipient.blockedUsers.indexOf(r.sender._id) != -1) : false;
 
-                var newMessage = db.messageModel({
+                var newMessage = self.db.messageModel({
                     sender      : r.sender.user,
                     sender_id   : r.sender._id,
                     recipient   : r.recipient.user,
@@ -214,20 +335,21 @@ var func = {
                     timeStamp   : Date.now(),
                     time        : (r.recipient.newVersion) ? oldTime(new Date(Number(paramsReceived.cb))) : oldTime(new Date(Number(paramsReceived.cb) - 7200000))
                 });
+
                 ['recipient', 'sender'].forEach(function (user, index) {
                     var self = this;
-                    var test = !(r[user].relations.some(function (partner) {
+                    var test = !(r[user].partners.some(function (partner) {
                         if (!!partner.partner_id.equals(r[self[(index) ? 0 : 1]]._id)) {
-                            partner.relation = paramsReceived.relation;
+                            partner.activity_relation = r.activityId;
                             return true
                         }
                         return false
                     }));
                     console.log(test);
                     if (test)
-                        r[user].relations.addToSet({
+                        r[user].partners.addToSet({
                             partner_id: r[self[(index) ? 0 : 1]]._id,
-                            relation  : paramsReceived.relation
+                            activity_relation  :r.activityId
                         });
                     r[user].save(function (e) {
                         console.log(e);
@@ -249,10 +371,10 @@ var func = {
                     },
                     isRecipeientOnline: function (parallelCallback) {
                         //parallelCallback(null, r.recipient.isOnline);
-                        pub.hereNow(r.recipient._id, function (isOnline) {
+                        self.pub.hereNow(r.recipient._id, function (isOnline) {
                             if (r.recipient.isOnline != isOnline) {
                                 console.log('good thing i used here now');
-                                db.userModel.update({_id: r.recipient._id}, {isOnline: isOnline});
+                                self.db.userModel.update({_id: r.recipient._id}, {isOnline: isOnline});
                             }
                             else console.log('here now shouldnt have been used');
                             parallelCallback(null, isOnline);
@@ -262,7 +384,7 @@ var func = {
 
                     if (secondResults.isSaved && secondResults.isRecipeientOnline) {
                         console.log('sendPubNub');
-                        pub.sendMsg(r.recipient._id, msgObj(paramsReceived.message, r.sender.user, null, true, true), function (e) {
+                        self.pub.sendMsg(r.recipient.id, msgObj(paramsReceived.message, r.sender.user, paramsReceived.relation, r.sender, true), function (e) {
                             respond(res, e, "success", true);
 
                         })

@@ -46,7 +46,7 @@ router.get('/users/1/', function (req, res) {
                     last_update       : users[i].last_update,
                     age               : (!!Number(users[i].birthday)) ? utils.ageCalc(new Date(Number(users[i].birthday) * 1000)) : null,
                     activities        : [],
-                    blockUsers          : [],
+                    blockUsers        : [],
                     partners          : [],
                     relation          : []
                 });
@@ -367,6 +367,76 @@ router.get('/partners/3/', function (req, res) {
         })
 
 });
+
+router.get('/relations/1/', function (req, res) {
+    console.log('relations 1 was called.');
+
+    db.userModel.find({})
+        .select('_id first_name user partners relations')
+        .populate('partners.partner_id')
+        .populate('partners.activity_relation')
+        .exec(function (e, users) {
+            users.forEach(function (user) {
+                user.partners.forEach(function (partner , index) {
+
+
+                    if (!partner.partner_id) {
+                        console.log('wtf');
+                        this.partners.pull(partner.id)
+                    }
+                    else
+                    {
+                    // Partner Relations
+                        var NOneedToAddPartner = partner.partner_id.relations.some(function (relation) {
+                            if (relation.partner_id == this.id) {
+                                relation.relation = partner.activity_relation.activity;
+                                return true;
+                            }
+                            else return false;
+                        });
+                        if (!NOneedToAddPartner)
+                            partner.partner_id.relations.addToSet({
+                                partner_id: this.id,
+                                relation  : partner.activity_relation.activity
+                            });
+                    //
+                    //  My Relations
+                    //
+                    NOneedToAddPartner = this.relations.some(function (relation) {
+                        if (relation.partner_id == partner.partner_id.id) {
+                            relation.relation = partner.activity_relation.activity;
+                            return true;
+                        }
+                        else return false;
+                    });
+
+                    if (!NOneedToAddPartner)
+                        this.relations.addToSet({
+                            partner_id: partner.partner_id.id,
+                            relation  : partner.activity_relation.activity
+                        });
+
+                    partner.save();
+                    }
+                    if ((index + 1) == this.partners.length)
+                    {
+                        this.save();
+                        console.log('user.saved');
+
+                    }
+
+                    /*
+
+                     partner.partner_id.relations.addToSet({
+                     partner_id: user.id,
+                     relation  : partner.activity_relation.activity
+                     })
+                     */
+                },user )
+            })
+        })
+
+});
 //
 //              search test
 //
@@ -441,38 +511,54 @@ router.get('/test', function (req, res) {
 
 });
 router.get('/del/', function (req, res) {
+    /*
+     var  settings = db.settingsModel ({
+     id: 10,
+     param_name: 'naor',
+     param_value: 'admin1234'
+     });
+     settings.save();
+     */
 /*
-    var  settings = db.settingsModel ({
-        id: 10,
-        param_name: 'naor',
-        param_value: 'admin1234'
+    db.userModel.update ({}, {relations:[]} , {multi:true}, function (e,c,raw) {
+        console.log(c)
     });
-    settings.save();
-*/
-    db.userModel.update({user:17},{partners:[]}, function (e, c, raw) {
-        console.log(c);
-    });
-    db.userModel.update({user:17},{relations:[]}, function (e, c, raw) {
-        console.log(c);
-    });
-    db.userModel.update({user:48},{partners:[]}, function (e, c, raw) {
-        console.log(c);
-    });
-    db.userModel.update({user:48},{relations:[]}, function (e, c, raw) {
-        console.log(c);
-    });
-/*
-    db.userModel.find({user:48})
-            .exec(function (e,user) {
-        console.log(user[0].last_visit);
-        });
 */
 
+    db.userModel.update({user: 48}, {partners: []}, function (e, c, raw) {
+        console.log(c);
+    });
+    db.userModel.update({user: 48}, {relations: []}, function (e, c, raw) {
+        console.log(c);
+    });
+
 /*
-        .exec(function (e) {
-            console.log('hope for good');
-        });
+    db.userModel.update({user: 59}, {partners: []}, function (e, c, raw) {
+        console.log(c);
+    });
+    db.userModel.update({user: 59}, {relations: []}, function (e, c, raw) {
+        console.log(c);
+    });
+    db.userModel.update({user: 17}, {partners: []}, function (e, c, raw) {
+        console.log(c);
+    });
+    db.userModel.update({user: 17}, {relations: []}, function (e, c, raw) {
+        console.log(c);
+    });
 */
+
+    /*
+     db.userModel.find({user:48})
+     .exec(function (e,user) {
+     console.log(user[0].last_visit);
+     });
+     */
+
+    /*
+     .exec(function (e) {
+     console.log('hope for good');
+     });
+     */
 
     /*
      db.activityModel.remove({relation: {$exists: true}}).exec(function (e, partners) {
@@ -500,11 +586,11 @@ router.get('/age/', function (req, res) {
     db.userModel.update({}, {blockedUsers: []}, {multi: true}, function (e, c, raw) {
         console.log(c);
     });
-/*
-    db.userModel.update({}, {newVersion: false}, {multi: true}, function (e, c, raw) {
-        console.log(c);
-    });
-*/
+    /*
+     db.userModel.update({}, {newVersion: false}, {multi: true}, function (e, c, raw) {
+     console.log(c);
+     });
+     */
     /*
 
      db.userModel.find({})

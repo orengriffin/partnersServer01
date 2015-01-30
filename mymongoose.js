@@ -212,7 +212,7 @@ var func = {
                 console.log()
             })
 
-    },
+    }
 };
 
 module.exports = func;
