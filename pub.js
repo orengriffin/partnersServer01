@@ -35,8 +35,7 @@ var pubFunctions = {
             presence: function (m) {
                 console.log('presence said: ' + m.action + ' ' + m.uuid);
                 var fbId = m.uuid.split('-')[0];
-                if (!isNaN(fbId))
-                {
+                if (!isNaN(fbId)) {
 
                     db.userModel.update({fb_uid: fbId},
                         {isOnline: (m.action == 'join')},
@@ -54,12 +53,26 @@ var pubFunctions = {
             }
         });
 
-        db.userModel.find({isOnline:true})
+        db.userModel.find({isOnline: true})
             .where('newVersion').equals(true)
             .select('id first_name last_name')
-            .exec(function (e,users) {
+            .exec(function (e, users) {
                 users.forEach(function (user) {
-                    self.subscribe(user.id);
+                    self.pub.here_now({
+                        channel : user.id,
+                        callback: function (m) {
+                            console.log('callback was called');
+                            if ((m.occupancy == 1 && m.uuids[0] == 'partnersServer' ) || !m.occupancy) {
+                                db.userModel.findByIdAndUpdate(user.id, {isOnline: false},
+                                    function (e, c, r) {
+                                        console.log(e);
+                                    });
+                                utils.tellPartnersOnlineStatus(user.id, false);
+                            }
+                            else
+                                self.subscribe(user.id);
+                        }
+                    });
                 });
             })
 
@@ -95,64 +108,84 @@ var pubFunctions = {
 
     userOnline: function (id, callback) {
         console.log('useronline');
-        this.subscribe(id);
-        callback();
-
-/*
         var self = this;
-        this.db.userModel.update({_id: id}, {isOnline: true}, function (e, c, raw) {
-            //console.log(c);
-            callback(true);
-            self.subscribe(id);
-        })
-*/
+        //this.subscribe(id, callback);
 
+              this.pub.here_now({
+                  channel : id,
+                  callback: function (m) {
+                      if (m.uuids[1] == 'partnersServer' || m.uuids[0] == 'partnersServer')
+                      {
+                          callback();
+                          self.subscribe(id);
+                          //self.subscribe(id, callback);
+
+                      }
+                      else
+                          self.subscribe(id, callback);
+                  }
+              });
     },
 
     unsubscribe: function (channel, pub) {
         console.log('unsubscribed');
-        pub.unsubscribe({
-            channel: channel
+        var str = pub.unsubscribe({
+            channel: String (channel),
+            callback: function (e) {
+                console.log(e);
+            }
         });
+        console.log(str);
 
     },
+
     hereNow    : function (channel, hereNowCallback) {
         this.pub.here_now({
             channel : String(channel),
             callback: function (m) {
                 console.log('here now told me ' + m);
-                //console.log('user is:' + !!r.recipient.isOnline);
                 hereNowCallback(m.occupancy > 1);
             }
         });
     },
+    //
+    //     Channel with each user
+    //
     subscribe  : function (channel, userCallback) {
         var self = this;
         var myPub = this.pub;
         var db = this.db;
         myPub.subscribe({
-            channel : channel,
-            message : function (m) {
+            //restore:true,
+            channel  : channel,
+            message  : function (m) {
                 if (typeof m != 'string') return;
+                if (m == 'im Alive') return;
                 var msg = JSON.parse(m);
                 self[msg.function](msg.id);
                 console.log('server received message. channel : ' + channel);
                 console.log(m);
             },
-            presence: function (m) {
+            presence : function (m) {
                 console.log('presence said: ' + m.action + ' ' + m.uuid);
                 var fbId = m.uuid.split('-')[1];
                 var id = m.uuid.split('-')[0];
-                if (!isNaN(fbId))
-                {
+                if (!isNaN(fbId)) {
                     var isOnline = (m.action == 'join');
-                    utils.tellPartnersOnlineStatus(id,isOnline);
+                    myPub.here_now({
+                        channel : 'partners-channel',
+                        callback: function (hereNow) {
+                            if (!((hereNow.occupancy == 1 && hereNow.uuids[0] == 'partnersServer' ) || !hereNow.occupancy))
+                                self.sendMsg('partners-channel', m)
+                        }
+                    });
+                    utils.tellPartnersOnlineStatus(id, isOnline);
                     db.userModel.findByIdAndUpdate(id,
                         {isOnline: isOnline},
                         function (e, c, raw) {
                             var onlineSTR = (isOnline) ? 'online' : 'offline';
                             if (!isOnline)
-                                self.unsubscribe(channel, self.pub);
+                                self.unsubscribe(id, self.pub);
                             console.log('updated ' + m.uuid.split('-')[2] + ' ' + m.uuid.split('-')[3] + ' to ' + onlineSTR);
                             //self.unsubscribe(id);
                         })
@@ -164,18 +197,10 @@ var pubFunctions = {
                 if (userCallback) userCallback();
 
             },
-            connect : function (m) {
+            connect  : function (m) {
                 console.log('subcribed');
-                 if (userCallback) userCallback();
-                //callback(true);
-                /*
-                 myPub.publish({
-                 channel: channel,
-                 message: {"msg": 'Server Entered Chat !'}
-                 });
-                 */
-            },
-            restore : false
+                if (userCallback) userCallback();
+            }
         });
     }
 

@@ -16,7 +16,7 @@
 <button onclick="del()"> del</button>
 <button onclick="search()"> search</button>
 <button onclick="birthday()"> birthday</button>
-<button onclick="test()"> test</button>
+<button onclick="test()"> chckmypartners</button>
 <button onclick="autocomplete()"> autocomplete</button>
 <button onclick="updateLocation()"> location</button>
 <button onclick="stranger()"> stranger</button>
@@ -115,9 +115,9 @@
         </td>
     </tr>
     <tr>
-        <td class="tg-izya">relations</td>
+        <td class="tg-izya">partners</td>
         <td class="tg-s6z2">
-            <button>1</button>
+            <button>4</button>
 
         </td>
         <td class="tg-s6z2">
@@ -213,13 +213,13 @@
     }
     function search() {
         var params = {
-            activity     : 'yoga',
-            session      : '54ad293c8f94e3d8344883ae',
-            cb           : (new Date().getTime()),
-            min_age      : '25',
-            max_age      : '88',
+            activity   : 'yoga',
+            session    : '54ad293c8f94e3d8344883ae',
+            cb         : (new Date().getTime()),
+            min_age    : '25',
+            max_age    : '88',
 //            search_female: '1',
-            search_male  : '0'
+            search_male: '0'
         };
 
         $.ajax({
@@ -237,7 +237,8 @@
     }
     function test() {
         $.ajax({
-            url    : 'http://localhost:3010/user/max',
+            url    : 'http://localhost:3010/user/chckMyPartners',
+            type   : 'POST',
             success: function (res) {
                 console.log(res);
                 $(this).parent().css('background-color', 'lightgreen');
@@ -367,15 +368,16 @@
     }
     function settings() {
         $.ajax({
-            url : 'http://localhost:3010/settings/',
+            url    : 'http://localhost:3010/settings/',
             success: function (response) {
                 response = JSON.parse(response);
 
             }
         });
-    }    function getPreLoginSettings() {
+    }
+    function getPreLoginSettings() {
         $.ajax({
-            url : 'http://localhost:3010/getPreLoginSettings/',
+            url    : 'http://localhost:3010/getPreLoginSettings/',
             success: function (response) {
                 response = JSON.parse(response);
 
@@ -387,6 +389,37 @@
         age /= 31558464000;
         age = parseInt(age);
         console.log('You age is ' + age);
+    }
+
+    function compareArrays() {
+        var localPartnersToAdd = [];
+        var partners = [53, 59];
+        var localArray = [];
+        for (var i = 0; i < partners.length; i++) {
+            var equals = false;
+            for (var j = 0; j < localArray.length; j++) {
+                equals = localArray[j] == partners[i];
+                if (equals)
+                    break;
+            }
+            if (!equals)
+                localPartnersToAdd.push({user: partners[i]});
+        }
+        $.ajax({
+                    type:'POST',
+                    url    : 'http://localhost:3010/user/specificPartners',
+                    data   : {
+                        session :'54ad293c8f94e3d8344883ae',
+                        partners: JSON.stringify (localPartnersToAdd)
+
+                    },
+                    success: function (response) {
+
+                        console.log(JSON.parse(response))
+                    }
+                }
+        );
+        console.log(localPartnersToAdd);
     }
 
 </script>

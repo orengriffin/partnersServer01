@@ -11,54 +11,93 @@ var ObjectId = require('mongoose').Types.ObjectId;
 
 
 router.get('/getHistory', function (req, res) {
-    var user_id = req.query.session;
-    db.messageModel.aggregate([
-            {
-                //$match:{isRead:  false}
-                $match: {
-                    $and: [
-                        {isRead: false},
-                        {recipient_id: ObjectId(user_id)},
-                        {isBlocked: false}
-                    ]
-                }
-            },
 
-            {
-                $project: {
-                    id     : "$_id",
-                    _id    : 0,
-                    time   : 1,
-                    sender : 1,
-                    message: 1
-                }
-            }
-        ]
-    )
-        .exec(function (e, messages) {
-            if (!messages)
-                messages = [];
+    var user_id = req.query.session;
+    async.parallel({
+        me         : function (callback) {
+            db.userModel.findById(user_id)
+                .select('platform newVersion')
+                .exec(function (e, me) {
+                    callback(e, {
+                        platform  : me.platform,
+                        newVersion: me.newVersion
+                    });
+                });
+        },
+        gotMessages: function (callback) {
+            db.messageModel.aggregate([
+                    {
+                        //$match:{isRead:  false}
+                        $match: {
+                            $and: [
+                                {isRead: false},
+                                {recipient_id: ObjectId(user_id)},
+                                {isBlocked: false}
+                            ]
+                        }
+                    },
+
+                    {
+                        $project: {
+                            id     : "$_id",
+                            _id    : 0,
+                            time   : 1,
+                            sender : 1,
+                            message: 1
+                        }
+                    }
+                ]
+            )
+                .exec(function (e, messages) {
+                    callback(e, messages);
+                });
+
+        }
+    }, function (e, resutls) {
+        var messages = (resutls.gotMessages) ? resutls.gotMessages : [];
+        if (resutls.me.newVersion && resutls.me.platform.toLocaleLowerCase() == 'ios')
+            appendCompleted(null, messages, function () {
+                res.send(JSON.stringify({message: messages}));
+            });
+        else
             res.send(JSON.stringify({message: messages}));
-        });
+
+    });
 
 });
+function appendCompleted(req, res, callback) {
+    if (req)
+        var messages = req.body.messages.split(',');
+    else
+        messages = res;
 
-router.post('/appendCompleted', function (req, res) {
-    var messages = req.body.messages.split(',');
-    console.log('messages');
+    console.log('appendCompleted');
     var count = 0;
 
     messages.forEach(function (id) {
+        if (id.id)
+            id = id.id;
         var length = this.length;
         db.messageModel.findByIdAndUpdate(id,
             {isRead: true}, function (e, c, r) {
                 if (!e)
                     count++;
-                if (count == length)
-                    res.send('success');
+                if (count == length) {
+                    if (callback)
+                        callback();
+                    else
+                        res.send('success');
+
+                }
             });
 
     }, messages);
+
+}
+
+
+router.post('/appendCompleted', function (req, res) {
+    appendCompleted(req, res);
 });
 
 function msgObj(msg, sender, relation, senderModel, isForeground) {
@@ -180,8 +219,8 @@ router.post('/sendMessage/dev', function (req, res) {
             console.log(test);
             if (test)
                 r[user].partners.addToSet({
-                    partner_id: r[self[(index) ? 0 : 1]]._id,
-                    activity_relation  :r.activityId
+                    partner_id       : r[self[(index) ? 0 : 1]]._id,
+                    activity_relation: r.activityId
                 });
             r[user].save(function (e) {
                 console.log(e);

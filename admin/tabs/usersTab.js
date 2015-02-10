@@ -13,23 +13,42 @@ function initUsersTab() {
     pub.subscribe({
         channel: 'partners-channel',
         message: function (m, a, b) {
-            refresh(pub, JSON.parse(m), a, b)
+            refresh(pub, m, a, b)
         },
 
         connect: function () {
-            start(pub)
+            $.ajax({
+                    url    : document.URL.split('admin')[0] + 'pub/whoIsOnline',
+                    success: function (response) {
+                        for (var i = 0; i < response.length; i++) {
+                            $('#onlineUsers').append(returnRow(
+                                response[i].fb_uid + '-' +
+                                response[i].first_name + '-' +
+                                response[i].last_name
+                            ));
+                        }
+                        console.log(response)
+                    }
+                }
+            )
         }
     });
 
 }
 function refresh(pub, m, a, b) {
-    if (m.action == 'offline') {
-        var id = m.user.split('-')[0];
+    if (m.action == 'join') {
+
+        var uid = m.uuid.split('-');
+        uid = uid[1] + '-' + uid [2] + '-' + uid[3];
+        $('#onlineUsers').append(returnRow(uid));
+
+    }
+    else {
+        var id = m.uuid.split('-')[1];
         if (!!$('#' + id)[0])
             $('#' + id).remove();
     }
-    if (m.action == 'online')
-        $('#onlineUsers').append(returnRow(m.user));
+
 
 }
 function start(pub) {
@@ -47,12 +66,12 @@ function start(pub) {
 }
 function sendToFunc() {
     var fb_uid = $(this).attr('id').split("B")[0];
-    getNumberOfUser (fb_uid, function (user) {
+    getNumberOfUser(fb_uid, function (user) {
         var image = $('<img>')
             .addClass('ui')
             .addClass('avatar')
             .addClass('image')
-            .attr('src', 'https://graph.facebook.com/' + fb_uid  + '/picture');
+            .attr('src', 'https://graph.facebook.com/' + fb_uid + '/picture');
 
         $('#sendRow').append(image);
         $('.BtnSendto').fadeOut();
@@ -62,8 +81,7 @@ function sendToFunc() {
 
     })
 }
-function sendMessage ()
-{
+function sendMessage() {
     $($('[data-tab="chat"]')[0]).trigger('click');
     $('.BtnFromto').fadeIn();
     $('#sendRow').remove()
@@ -71,7 +89,7 @@ function sendMessage ()
 }
 function sendFromFunc() {
     var fb_uid = $(this).attr('id').split("B")[0];
-    getNumberOfUser (fb_uid, function (user) {
+    getNumberOfUser(fb_uid, function (user) {
         $('#onlineUsers').prepend(addSendRor(user, fb_uid));
         $('.BtnSendto').fadeIn();
         $('.BtnFromto').fadeOut();
@@ -79,12 +97,12 @@ function sendFromFunc() {
 
     })
 }
-function getNumberOfUser (fb_uid, callback) {
+function getNumberOfUser(fb_uid, callback) {
     $.ajax({
-            type:'POST',
+            type   : 'POST',
             url    : document.URL + 'login/getUser',
-            data: {
-                fb_uid:fb_uid
+            data   : {
+                fb_uid: fb_uid
             },
             success: function (response) {
                 callback(response)
@@ -135,7 +153,7 @@ function addSendRor(user, fb_uid) {
         .addClass('ui')
         .addClass('avatar')
         .addClass('image')
-        .attr('src', 'https://graph.facebook.com/' + fb_uid  + '/picture');
+        .attr('src', 'https://graph.facebook.com/' + fb_uid + '/picture');
 
     content.append(header);
     row.append(image);

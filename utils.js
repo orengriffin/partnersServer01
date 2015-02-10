@@ -48,7 +48,7 @@ function oldTime(date) {
 
 }
 
-function sendNotification(recipient, sender, message, relation, callback) {
+function sendNotification(recipient, sender, message, relation, callback, badge) {
     if (recipient.platform.toLowerCase() == 'android') {
         console.log('sending ' + message + ' to ' + recipient.first_name + ' ' + recipient.udid);
         gcm.Sender('AIzaSyAnpn0Y61bm5PuFzHbCojUr5-htTgzZfCE').send(new gcm.Message({
@@ -65,25 +65,27 @@ function sendNotification(recipient, sender, message, relation, callback) {
         var note = new apn.Notification();
 
         note.expiry = Math.floor(Date.now() / 1000) + 3600; // Expires 1 hour from now.
-        note.badge = 1;
+        note.badge = badge;
         note.sound = "default";
-        note.message = (relation) ? relation : 'unknown';
-        note.title = (relation) ? relation : 'unknown';
+        //note.message = (relation) ? relation : 'unknown';
+        //note.title = (relation) ? relation : 'unknown';
         /*
          note.sender = sender;
          */
         note.alert = {
-            body: sender.first_name + ' ' + sender.last_name + ':' + message
+            'title': (relation) ? '#' + relation : 'unknown',
+            'body' : sender.first_name + ' ' + sender.last_name + ': ' + message
             //'loc-key':'UTF-8'
         };
         note.payload = {
             creation: parseInt(new Date().getTime() / 1000),
+            'title' : (relation) ? '#' + relation : 'unknown',
             message : message,
-            sender  : sender
+            sender  : sender.user
         };
 
         apnConnection.pushNotification(note, myDevice);
-        callback();
+        if (callback) callback();
 
         //apn.Connection({}).pushNotification(new apn.Notification(), new apn.Device(recipient.udid) );
         console.log('ios');
@@ -102,7 +104,7 @@ var func = {
         var localPub = this.pub;
         var self = this;
         async.parallel({
-            me: function (callback) {
+            me      : function (callback) {
                 self.db.userModel.findById(id)
                     .select('user fbuid location')
                     .exec(function (e, user) {
@@ -137,42 +139,13 @@ var func = {
 
         });
 
-/*
-        this.db.userModel.findById(id)
-            .select('user fbuid location')
-            .exec(function (e, me) {
-                self.db.userModel.find()
-                    .select('partners newVersion isOnline fb_uid first_name')
-                    .where('isOnline').equals(true)
-                    .where('partners').ne([])
-                    .where('partners.partner_id').equals(id)
-                    .where('newVersion').equals(true)
-                    .exec(function (e, partners) {
-                        partners.forEach(function (partner) {
-                                localPub.sendMsg(partner.id, {
-                                    distance: self.distanceCalc({
-                                            lat: Number(lat),
-                                            lon: Number(lon)
-                                        },
-                                        {
-                                            latitude : this.location[0],
-                                            longitude: this.location[1]
-                                        }),
-                                    user    : this.user,
-                                    fbid    : this.fb_uid
-                                })
-                        }, me)
-                    });
-             })
-*/
-
     },
 
     tellPartnersOnlineStatus: function (id, isOnline) {
         var localPub = this.pub;
         var self = this;
         async.parallel({
-            me: function (callback) {
+            me      : function (callback) {
                 self.db.userModel.findById(id)
                     .select('user id fb_uid')
                     .exec(function (e, user) {
@@ -180,15 +153,15 @@ var func = {
                     })
             },
             partners: function (callback) {
-                        self.db.userModel.find()
-                            .where('isOnline').equals(true)
-                            .where('partners').ne([])
-                            .select('partners newVersion fb_uid first_name isOnline')
-                            .where('partners.partner_id').equals(id)
-                            .where('newVersion').equals(true)
-                            .exec(function (e, users) {
-                                callback(e,users);
-                            });
+                self.db.userModel.find()
+                    .where('isOnline').equals(true)
+                    .where('partners').ne([])
+                    .select('partners newVersion fb_uid first_name isOnline')
+                    .where('partners.partner_id').equals(id)
+                    .where('newVersion').equals(true)
+                    .exec(function (e, users) {
+                        callback(e, users);
+                    });
             }
         }, function (e, r) {
             r.partners.forEach(function (partner) {
@@ -196,7 +169,7 @@ var func = {
                 localPub.sendMsg(partner.id, {
                     online: isOnline,
                     fbid  : this.fb_uid,
-                    user : this.user
+                    user  : this.user
                 })
             }, r.me)
 
@@ -283,8 +256,6 @@ var func = {
         isLoading: false,
         get      : function (callback) {
             var tokenToReturn = this.theToken;
-            //this.isLoading = true;
-            //callback(tokenToReturn);
             return tokenToReturn;
         },
         set      : function (tokenParam) {
@@ -295,23 +266,26 @@ var func = {
 
     sendMessage: function (paramsReceived, res, notToSave) {
         {
-            var self = this ;
+            var self = this;
             async.parallel({
                 activityId: function (callback) {
-                    self.db.activityModel.findOne({activity: paramsReceived.relation})
-                        .select('parent_activity_id')
-                        .exec(function (e, activity) {
-                            callback(e, activity.parent_activity_id)
-                        });
+                    if (paramsReceived.relation)
+                        self.db.activityModel.findOne({activity: paramsReceived.relation})
+                            .select('parent_activity_id')
+                            .exec(function (e, activity) {
+                                callback(e, activity.parent_activity_id)
+                            });
+                    else
+                        callback(null, false);
                 },
-                recipient: function (callback) {
+                recipient : function (callback) {
                     self.db.userModel.findOne({user: paramsReceived.user_id})
                         .select('platform newVersion isOnline udid _id first_name user partners blockedUsers newVersion')
                         .exec(function (e, recipient) {
                             callback(e, recipient);
                         });
                 },
-                sender   : function (callback) {
+                sender    : function (callback) {
                     self.db.userModel.findById(paramsReceived.session)
                         .select('user _id relations first_name last_name partners')
                         .exec(function (e, sender) {
@@ -319,8 +293,7 @@ var func = {
                         });
 
                 }
-            }, function (e, r)
-            {
+            }, function (e, r) {
 
                 var isBLocked = (r.recipient.blockedUsers) ? (r.recipient.blockedUsers.indexOf(r.sender._id) != -1) : false;
 
@@ -340,7 +313,8 @@ var func = {
                     var self = this;
                     var test = !(r[user].partners.some(function (partner) {
                         if (!!partner.partner_id.equals(r[self[(index) ? 0 : 1]]._id)) {
-                            partner.activity_relation = r.activityId;
+                            if (r.activityId)
+                                partner.activity_relation = r.activityId;
                             return true
                         }
                         return false
@@ -348,8 +322,9 @@ var func = {
                     console.log(test);
                     if (test)
                         r[user].partners.addToSet({
-                            partner_id: r[self[(index) ? 0 : 1]]._id,
-                            activity_relation  :r.activityId
+                            partner_id       : r[self[(index) ? 0 : 1]]._id,
+                            activity_relation: r.activityId,
+                            partner_num      : r[self[(index) ? 0 : 1]].user
                         });
                     r[user].save(function (e) {
                         console.log(e);
@@ -358,19 +333,20 @@ var func = {
 
                 }, ['recipient', 'sender']);
 
-                //r.sender.relations.addToSet();
                 async.parallel({
                     isSaved           : function (callback) {
                         if (notToSave)
                             callback(null, true);
                         else
-                            newMessage.save(function (e) {
+                            newMessage.save(function (e, message) {
                                 console.log('message save: ' + !e);
-                                callback(e, !e);
+                                callback(e, {
+                                    isSaved: !e,
+                                    message: message
+                                });
                             });
                     },
                     isRecipeientOnline: function (parallelCallback) {
-                        //parallelCallback(null, r.recipient.isOnline);
                         self.pub.hereNow(r.recipient._id, function (isOnline) {
                             if (r.recipient.isOnline != isOnline) {
                                 console.log('good thing i used here now');
@@ -381,18 +357,64 @@ var func = {
                         });
                     }
                 }, function (e, secondResults) {
+                    if (secondResults.isSaved.isSaved) {
+                        if (r.recipient.newVersion) {
 
-                    if (secondResults.isSaved && secondResults.isRecipeientOnline) {
-                        console.log('sendPubNub');
-                        self.pub.sendMsg(r.recipient.id, msgObj(paramsReceived.message, r.sender.user, paramsReceived.relation, r.sender, true), function (e) {
-                            respond(res, e, "success", true);
+                            if (r.recipient.platform.toLocaleLowerCase() == 'android') {
+                                if (secondResults.isRecipeientOnline) {
+                                    console.log('sendPubNub');
+                                    self.pub.sendMsg(r.recipient.id, msgObj(paramsReceived.message, r.sender.user, paramsReceived.relation, r.sender, true), function (e) {
+                                        respond(res, e, "success", true);
 
-                        })
+                                    })
+                                }
+                                else
+                                    sendNotification(r.recipient, r.sender, paramsReceived.message, paramsReceived.relation, function (err, result) {
+                                        respond(res, err, "success", true);
+                                    })
+                            }
+                            else // if IOS
+                            {
+                                console.log('trying sendPubNub');
+                                self.pub.sendMsg(r.recipient.id, msgObj(paramsReceived.message, r.sender.user, paramsReceived.relation, r.sender, true), function (e) {
+                                    setTimeout(function () {
+                                        async.parallel({
+                                                badge  : function (callback) {
+                                                    self.db.messageModel.where('recipient_id').equals(r.recipient.id)
+                                                        .where('isRead').equals(false)
+                                                        .where('isBlocked').equals(false)
+                                                        .count(function (err, count) {
+                                                            callback(err, count);
+                                                        });
+                                                },
+                                                message: function (callback) {
+                                                    self.db.messageModel.findById(secondResults.isSaved.message.id)
+                                                        .exec(function (e, mesasgeFound) {
+                                                            callback(e, !mesasgeFound.isRead);
+                                                        })
+
+                                                }
+                                            }, function (e, iosResults) {
+                                                if (iosResults.message)
+                                                    sendNotification(r.recipient, r.sender, paramsReceived.message, paramsReceived.relation, null ,iosResults.badge)
+                                            }
+                                        )
+                                    }, 5000);
+                                    respond(res, e, "success", true);
+
+                                })
+
+                            }
+                        }
+                        else
+                            sendNotification(r.recipient, r.sender, paramsReceived.message, paramsReceived.relation, function (err, result) {
+                                respond(res, err, "success", true);
+                            })
+
                     }
                     else
-                        sendNotification(r.recipient, r.sender, paramsReceived.message, paramsReceived.relation, function (err, result) {
-                            respond(res, err, "success", true);
-                        })
+                        respond(res, err, "error", true);
+
                 });
             });
 

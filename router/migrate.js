@@ -368,71 +368,28 @@ router.get('/partners/3/', function (req, res) {
 
 });
 
-router.get('/relations/1/', function (req, res) {
-    console.log('relations 1 was called.');
+router.get('/partners/4/', function (req, res) {
+    console.log('partners 4 was called.');
 
     db.userModel.find({})
-        .select('_id first_name user partners relations')
+        .select('_id first_name user partners')
+        .where('partners').ne([])
         .populate('partners.partner_id')
-        .populate('partners.activity_relation')
         .exec(function (e, users) {
             users.forEach(function (user) {
-                user.partners.forEach(function (partner , index) {
+                user.partners.forEach(function (partner, index) {
+                    if (partner.partner_id)
+                    {
 
-
-                    if (!partner.partner_id) {
-                        console.log('wtf');
-                        this.partners.pull(partner.id)
+                        partner.partner_num = partner.partner_id.user;
+                    if (this.partners.length == index + 1)
+                        this.save(function (e) {
+                            console.log(e);
+                        });
                     }
                     else
-                    {
-                    // Partner Relations
-                        var NOneedToAddPartner = partner.partner_id.relations.some(function (relation) {
-                            if (relation.partner_id == this.id) {
-                                relation.relation = partner.activity_relation.activity;
-                                return true;
-                            }
-                            else return false;
-                        });
-                        if (!NOneedToAddPartner)
-                            partner.partner_id.relations.addToSet({
-                                partner_id: this.id,
-                                relation  : partner.activity_relation.activity
-                            });
-                    //
-                    //  My Relations
-                    //
-                    NOneedToAddPartner = this.relations.some(function (relation) {
-                        if (relation.partner_id == partner.partner_id.id) {
-                            relation.relation = partner.activity_relation.activity;
-                            return true;
-                        }
-                        else return false;
-                    });
-
-                    if (!NOneedToAddPartner)
-                        this.relations.addToSet({
-                            partner_id: partner.partner_id.id,
-                            relation  : partner.activity_relation.activity
-                        });
-
-                    partner.save();
-                    }
-                    if ((index + 1) == this.partners.length)
-                    {
-                        this.save();
-                        console.log('user.saved');
-
-                    }
-
-                    /*
-
-                     partner.partner_id.relations.addToSet({
-                     partner_id: user.id,
-                     relation  : partner.activity_relation.activity
-                     })
-                     */
-                },user )
+                        console.log ('wtf');
+                }, user)
             })
         })
 
@@ -519,11 +476,11 @@ router.get('/del/', function (req, res) {
      });
      settings.save();
      */
-/*
-    db.userModel.update ({}, {relations:[]} , {multi:true}, function (e,c,raw) {
-        console.log(c)
-    });
-*/
+    /*
+     db.userModel.update ({}, {relations:[]} , {multi:true}, function (e,c,raw) {
+     console.log(c)
+     });
+     */
 
     db.userModel.update({user: 48}, {partners: []}, function (e, c, raw) {
         console.log(c);
@@ -532,20 +489,20 @@ router.get('/del/', function (req, res) {
         console.log(c);
     });
 
-/*
-    db.userModel.update({user: 59}, {partners: []}, function (e, c, raw) {
-        console.log(c);
-    });
-    db.userModel.update({user: 59}, {relations: []}, function (e, c, raw) {
-        console.log(c);
-    });
-    db.userModel.update({user: 17}, {partners: []}, function (e, c, raw) {
-        console.log(c);
-    });
-    db.userModel.update({user: 17}, {relations: []}, function (e, c, raw) {
-        console.log(c);
-    });
-*/
+    /*
+     db.userModel.update({user: 59}, {partners: []}, function (e, c, raw) {
+     console.log(c);
+     });
+     db.userModel.update({user: 59}, {relations: []}, function (e, c, raw) {
+     console.log(c);
+     });
+     db.userModel.update({user: 17}, {partners: []}, function (e, c, raw) {
+     console.log(c);
+     });
+     db.userModel.update({user: 17}, {relations: []}, function (e, c, raw) {
+     console.log(c);
+     });
+     */
 
     /*
      db.userModel.find({user:48})
@@ -583,9 +540,43 @@ router.get('/birthday/', function (req, res) {
 
 });
 router.get('/age/', function (req, res) {
+
+    db.messageModel.where('recipient_id').equals('54ad293c8f94e3d8344883b9')
+        .where('isRead').equals(false)
+        .where('isBlocked').equals(false)
+        .count(function (err, count) {
+            console.log (count);
+        });
+
+/*
+    db.userModel.find({fb_uid:'10152456757213601'})
+        .where('first_name').ne('Oren')
+        .exec(function (e, users) {
+            db.userModel.findByIdAndRemove(users[0].id, function (e,c) {
+
+            console.log(e);
+            })
+        });
+*/
+/*    db.oldUserModel.find()
+        .select('fb_uid user')
+        .exec(function (e, users) {
+           users.forEach(function (user) {
+               db.userModel.findOneAndUpdate(
+                   {user:user.user},
+                   {fb_uid:user.fb_uid},
+                   function (e,c,raw) {
+                       console.log(e);
+                   }
+
+               )
+           })
+        });*/
+/*
     db.userModel.update({}, {blockedUsers: []}, {multi: true}, function (e, c, raw) {
         console.log(c);
     });
+*/
     /*
      db.userModel.update({}, {newVersion: false}, {multi: true}, function (e, c, raw) {
      console.log(c);

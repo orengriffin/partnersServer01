@@ -19,12 +19,15 @@ $( document ).ready(function() {
     });
 
     //
-    $('.slick').slick({
-        //centerPadding:10px,
-        arrow:false,
-        adaptiveHeight:true,
-        intialSlide:1
-    });
+    setTimeout(function () {
+
+        $('.slick').slick({
+            //centerPadding:10px,
+            arrow:false,
+            adaptiveHeight:true,
+            intialSlide:1
+        });
+    },500);
 
 
 

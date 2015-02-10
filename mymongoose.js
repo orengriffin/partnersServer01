@@ -25,19 +25,10 @@ var func = {
 
         var Schema = mongoose.Schema;
 
-        /*
-         this.userFacebookFriendsSchema = new Schema({
-         id     : String,
-         friends: [{
-         id  : String,
-         name: String
-         }]
-         });
-         */
 
         var oldUserSchema = new Schema({
             user               : Number,
-            fb_uid             : Number,
+            fb_uid             : String,
             first_name         : String,
             last_name          : String,
             locale             : String,
@@ -75,7 +66,7 @@ var func = {
 
         var userSchema = new Schema({
             user              : Number,
-            fb_uid            : Number,
+            fb_uid            : String,
             first_name        : String,
             last_name         : String,
             locale            : String,
@@ -104,6 +95,7 @@ var func = {
             partners          : [
                 {
                     partner_id       : {type: Schema.Types.ObjectId, ref: 'user'},
+                    partner_num      : Number,
                     activity_relation: {type: Schema.Types.ObjectId, ref: 'activitie'},
                     created          : Date
 
@@ -165,19 +157,6 @@ var func = {
             created    : String
         });
 
-        /*
-         var oldSettingsSchema = new Schema({
-         featured_activities : String,
-         pre_login_details   : String,
-         search_base_settings: String,
-         new_partners_message: String,
-         whatsapp_message    : String,
-         facebook_message    : String,
-         first_search        : String,
-         appstore_link       : String,
-         play_link           : String
-         });
-         */
 
         var settingsSchema = new Schema({
             id         : Number,
@@ -187,18 +166,8 @@ var func = {
 
         this.settingsModel = mongoose.model('setting', settingsSchema);
 
-        /*       var relationsSchema = new Schema({
-         id      : Number,
-         userIdA : {type: Schema.Types.ObjectId, ref: 'user'},
-         userIdB : {type: Schema.Types.ObjectId, ref: 'user'},
-         activity: String
-         });
-
-         this.relationModel = mongoose.model('relation', relationsSchema);
-         */
         this.partnersModel = mongoose.model('partner', partnersSchema);
 
-        //this.UserFacebookFriendsModel = mongoose.model('facebookFriend', this.userFacebookFriendsSchema);
 
         console.log('sucess!');
         pub.init();

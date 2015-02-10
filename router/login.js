@@ -14,17 +14,23 @@ router.post('/', function (req, res) {
     if (!!paramsReceived.username)
         db.settingsModel.findOne({param_name:paramsReceived.username})
             .exec(function (e, settings) {
-                if (settings.param_value == paramsReceived.password)
+                if (settings)
                 {
-                    var newToken = ranToken.generate(16);
-                    utils.token.set(newToken);
-                    res.send({
-                        code:'success',
-                        token: newToken
-                    });
+                    if (settings.param_value == paramsReceived.password)
+                    {
+                        var newToken = ranToken.generate(16);
+                        utils.token.set(newToken);
+                        res.send({
+                            code:'success',
+                            token: newToken
+                        });
+                    }
+                    else
+                        res.send('bad password');
                 }
                 else
-                    res.send('bad credentials');
+                    res.send('bad username');
+
             });
 } );
 

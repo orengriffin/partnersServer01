@@ -68,29 +68,12 @@ router.post('/removePartners/', function (req, res) {
     var paramsReceived = req.body;
 
     console.log('removePartners');
-    async.parallel({
-        me             : function (callback) {
-            db.userModel.findById(paramsReceived.session)
-                .exec(function (e, me) {
-                    callback(e, me);
-                })
-        },
-        partnerToRemove: function (callback) {
-            db.userModel.findOne({user: paramsReceived.partner_id})
-                //.select('_id first_name')
-                .exec(function (e, destUser) {
-                    callback(e, destUser);
-                });
 
-        }
-    }, function (e, r) {
-        db.userModel.update({_id: r.me.id},
-            {$pull: {partners: {partner_id: r.partnerToRemove.id}}},
+        db.userModel.findByIdAndUpdate(paramsReceived.session,
+            {$pull: {partners: {partner_num: paramsReceived.partner_id}}},
             function (e, count, raw) {
                 respond(res, e, 'success', true);
             });
-
-    });
 });
 router.post('/setPartners/', function (req, res) {
     var paramsReceived = req.body;
@@ -121,36 +104,6 @@ router.post('/setPartners/', function (req, res) {
         }
     }, function (err, results) {
 
-        /*        // Partner Relations
-
-         var NOneedToAddPartner = results.partner.relations.some(function (relation) {
-         if (relation.partner_id == results.me.id) {
-         relation.relation = paramsReceived.activity;
-         return true;
-         }
-         else return false;
-         });
-         if (!NOneedToAddPartner)
-         results.partner.relations.addToSet({
-         partner_id: results.me.id,
-         relation  : paramsReceived.activity
-         });
-         //
-         //  My Relations
-         //
-         NOneedToAddPartner = results.me.relations.some(function (relation) {
-         if (relation.partner_id == results.partner.id) {
-         relation.relation = paramsReceived.activity;
-         return true;
-         }
-         else return false;
-         });
-
-         if (!NOneedToAddPartner)
-         results.me.relations.addToSet({
-         partner_id: results.partner.id,
-         relation  : paramsReceived.activity
-         });*/
         //
         //  Adding the new Partner
         //
@@ -166,6 +119,7 @@ router.post('/setPartners/', function (req, res) {
         if (!NOneedToAddPartner)
             results.me.partners.addToSet({
                 partner_id       : results.partner.id,
+                partner_num       : paramsReceived.partner_id,
                 activity_relation: results.activityId,
                 created          : time
             });
@@ -196,20 +150,13 @@ router.get('/getPartnersList/', function (req, res) {
     var partnersToReturn = [];
 
     var convertUser = function (partner, me, i) {   // backwards compatibilty
-        var relationFound = '';
 
-        //if (partner.relations)
-        /*
-         partner.relations.forEach(function (relation) {
-         if (String(relation.partner_id) == String(me._id))
-         relationFound = relation.relation;
-         });
-         */
 
         var locationArray = partner.location;
         delete partner.location;
 
-        partner.relation = me.partners[i].activity_relation.activity;
+        if (me.partners[i].activity_relation)
+            partner.relation = me.partners[i].activity_relation.activity;
         partner.two_way_trust = 1;
         partner.is_online = (partner.isOnline) ? 1 : 0;
         partner.location_longtitude = locationArray[0];
@@ -245,7 +192,7 @@ router.get('/getPartnersList/', function (req, res) {
         });
 });
 router.get('/newGetPartnersList/', function (req, res) {
-    console.log(' new getting partners');
+    console.log('new getting partners');
 
     var paramsReceived = req.query;
     var partnersToReturn = [];
@@ -255,7 +202,8 @@ router.get('/newGetPartnersList/', function (req, res) {
         var locationArray = partner.location;
         delete partner.location;
 
-        partner.relation = me.partners[i].activity_relation.activity;
+        if (me.partners[i].activity_relation)
+            partner.relation = me.partners[i].activity_relation.activity;
         //partner.two_way_trust = 1;
         partner.is_online = (partner.isOnline) ? 1 : 0;
         partner.location = (me.location[0]) ? utils.distanceCalc(
@@ -286,14 +234,6 @@ router.get('/newGetPartnersList/', function (req, res) {
             }, user.partners);
         });
 });
-/*router.get('/max/', function (req, res) {
- db.userModel.findOne({})
- .select('user')
- .sort('-user')
- .exec(function (e, user) {
- console.log(user.user);
- });
- });*/
 
 router.post('/subscribeActivity/', function (req, res) {
     console.log('subscribeActivity');
@@ -512,8 +452,8 @@ router.get('/newStranger/', function (req, res) {
                             last_name    : partner.partner_id.last_name,
                             two_way_trust: 1,
                             last_seen    : (partner.partner_id.isOnline) ? " " : utils.timeCalc(partner.partner_id.last_visit, 0),
-                            location     : (self.location[0]) ? utils.distanceCalc(
-                                {lon: self.location[0], lat: self.location[1]},
+                            location     : (me.location[0]) ? utils.distanceCalc(
+                                {lon: me.location[0], lat: me.location[1]},
                                 {
                                     longitude: partner.partner_id.location[0],
                                     latitude : partner.partner_id.location[1]
@@ -521,7 +461,7 @@ router.get('/newStranger/', function (req, res) {
                             is_online    : (partner.partner_id.isOnline) ? 1 : 0,
                             is_partners  : 1,
                             age          : String((!!partner.partner_id.birthday) ? utils.ageCalc(partner.partner_id.birthday) : ''),
-                            isBlocked    : (self.blockedUsers.indexOf(partner.partner_id.id) != -1)
+                            isBlocked    : (me.blockedUsers.indexOf(partner.partner_id.id) != -1)
 
                         }, true);
 
@@ -594,6 +534,98 @@ router.post('/enterApp/', function (req, res) {
                         session      : user._id + ''
                     }
                 });
+
+        };
+        db.userModel.findOne({fb_uid: paramsReceived.fb_uid})
+            .exec(function (e, user) {
+                if (user) { // update existing  user
+                    if (user.newVersion || paramsReceived.newVersion)
+                        pub.subscribe(user._id);
+                    utils.myForEach(paramsReceived, function (prop, val, next) {
+                        if (val && val != 'unknown' && String(user[prop]) != String(val)) {
+                            console.log('Updating ' + prop + ' with ' + val);
+                            user[prop] = val;
+                        }
+                        next();
+                    }, function () {
+                        //utils.tellPartnersOnlineStatus(user.id, 'online');
+                        user.save(function (e) {
+                            console.log(user.first_name + ' ' + user.last_name + ' Has logged in and updated');
+                            respond(user);
+                        });
+                        console.log('finish');
+
+                    });
+                }
+                else {  // create new user
+                    db.userModel.findOne({})
+                        .select('user')
+                        .sort('-user')
+                        .exec(function (e, lastUser) {
+                            paramsReceived.user = lastUser.user + 1;
+                            db.userModel(paramsReceived)
+                                .save(function () {
+                                    db.userModel.findOne({user: paramsReceived.user})
+                                        .select('_id first_name last_name email_notification notify_partner user')
+                                        .exec(function (e, newUser) {
+                                            console.log(newUser.first_name + ' ' + newUser.last_name + ' Added to DB');
+                                            respond(newUser);
+                                        });
+                                });
+
+                        });
+                }
+
+            });
+    }
+});
+router.post('/newEnterApp/', function (req, res) {
+    console.log('new enterApp');
+    var paramsReceived = req.body;
+    if (paramsReceived.fb_uid == 'null') {
+        console.log('USER SEND A NULL FB ID');
+        res.status(500).send({message: 'no facebook id'});
+    } else {
+
+        paramsReceived.location = [paramsReceived.longitude, paramsReceived.latitude];
+        if (paramsReceived.birthday) {
+            paramsReceived.birthday = new Date(paramsReceived.birthday);
+            paramsReceived.age = utils.ageCalc(paramsReceived.birthday);
+        }
+        paramsReceived.last_visit = new Date(Number(req.query.cb));
+        //paramsReceived.isOnline = true;
+
+        if (paramsReceived.longitude) {
+            delete paramsReceived.longitude;
+            delete paramsReceived.latitude;
+        }
+        else {
+            console.log('no locaction recieved');
+            delete paramsReceived.location;
+        }
+
+        var respond = function (user) {
+            var partnersArray = [];
+            user.partners.forEach (function (partner, index) {
+                partnersArray.push(partner.partner_num);
+                if (index + 1 == user.partners.length)
+                    res.send(
+                        {
+                            code   : 0,
+                            message: {
+
+                                login_success: true,
+                                notifications: {
+                                    email      : (user.email_notification) ? '1' : '0',
+                                    new_partner: (user.notify_partner) ? '1' : '0'
+                                },
+                                uid          : user.user,
+                                session      : user._id + '',
+                                partners: partnersArray
+                            }
+                        });
+
+            }, user);
 
         };
         db.userModel.findOne({fb_uid: paramsReceived.fb_uid})
@@ -739,6 +771,38 @@ router.post('/blockUser', function (req, res) {
         }
     });
 });
+router.post('/specificPartners', function (req, res) {
+    var paramsReceived = req.body;
+    var partners = JSON.parse( paramsReceived.partners);
+
+    db.userModel.findById(paramsReceived.session)
+        .populate('partners.activity_relation')
+        .exec(function (e, me) {
+            var relationObj = {};
+            me.partners.forEach (function (partner, index) {
+                relationObj['user_'+ String(partner.partner_num)] = partner.activity_relation.activity;
+                console.log(relationObj);
+                if (index  + 1 == me.partners.length )
+                {
+                    db.userModel.find()
+                        .or(partners)
+                        .select('fb_uid user first_name last_name image')
+                        .exec(function (e, partners) {
+                            var partnersToReturn = [];
+                            partners.forEach(function (partner, index) {
+                                partnersToReturn.push(partner._doc);
+                                partnersToReturn[index].relation = relationObj['user_' +partner.user];
+                                if (partners.length == index + 1)
+                                    respond(res,e,{partners:partnersToReturn},true);
+
+                            })
+                        })
+
+                }
+            } )
+        })
+
+} );
 
 
 module.exports = router;

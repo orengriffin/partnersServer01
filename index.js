@@ -43,8 +43,9 @@ app.use('/admin', function (req, res, next) {
 
     if (utils.token.isLoading) {
         pagesLoaded++;
+        //console.log(pagesLoaded);
         utils.token.theToken = null;
-        if (pagesLoaded == 28) {
+        if (pagesLoaded == 33) {
             console.log('Admin Page Loaded');
             pagesLoaded = 0;
             utils.token.isLoading = false;
