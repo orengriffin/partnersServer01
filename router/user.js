@@ -209,6 +209,7 @@ router.get('/newGetPartnersList/', function (req, res) {
         partner.location = (me.location[0]) ? utils.distanceCalc(
             {lon: me.location[0], lat: me.location[1]},
             {longitude: locationArray[0], latitude: locationArray[1]}) : "";
+        console.log (partner.location);
 
         delete partner._id;
         delete partner.activities;

@@ -43,9 +43,9 @@ app.use('/admin', function (req, res, next) {
 
     if (utils.token.isLoading) {
         pagesLoaded++;
-        //console.log(pagesLoaded);
+        console.log(pagesLoaded);
         utils.token.theToken = null;
-        if (pagesLoaded == 33) {
+        if (pagesLoaded == 35) {
             console.log('Admin Page Loaded');
             pagesLoaded = 0;
             utils.token.isLoading = false;
@@ -72,7 +72,8 @@ app.all('*', function (req, res, next) {
     if (id && cb)
         db.updateLastSeen(id, cb);
 
-    next();
+    if (db.wasInit)
+        next();
 });
 
 

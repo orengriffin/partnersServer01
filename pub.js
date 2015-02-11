@@ -14,10 +14,10 @@ var pubFunctions = {
         this.pub = require("pubnub")({
             ssl          : true,
             uuid         : 'partnersServer',
-            publish_key  : 'pub-c-78bc252c-b8e5-4093-877e-bf52f7d24963',
-            subscribe_key: 'sub-c-540acdd2-96a2-11e4-ae17-02ee2ddab7fe'
-            //publish_key  : process.env.PUBNUB_PUBLISH_KEY,
-            //subscribe_key: process.env.PUBNUB_SUBSCRIBE_KEY
+            //publish_key  : 'pub-c-78bc252c-b8e5-4093-877e-bf52f7d24963',
+            //subscribe_key: 'sub-c-540acdd2-96a2-11e4-ae17-02ee2ddab7fe'
+            publish_key  : process.env.PUBNUB_PUBLISH_KEY,
+            subscribe_key: process.env.PUBNUB_SUBSCRIBE_KEY
         });
         utils.init();
         this.subscribeToMain();
@@ -111,35 +111,37 @@ var pubFunctions = {
         var self = this;
         //this.subscribe(id, callback);
 
-              this.pub.here_now({
-                  channel : id,
-                  callback: function (m) {
-                      if (m.uuids[1] == 'partnersServer' || m.uuids[0] == 'partnersServer')
-                      {
-                          callback();
-                          self.subscribe(id);
-                          //self.subscribe(id, callback);
+        this.pub.here_now({
+            channel : id,
+            callback: function (m) {
+                if (m.uuids[1] == 'partnersServer' || m.uuids[0] == 'partnersServer') {
+                    //self.unsubscribe(id, self.pub, function () {
+                    //    self.subscribe(id, callback);
+                    //});
+                    callback();
 
-                      }
-                      else
-                          self.subscribe(id, callback);
-                  }
-              });
+                }
+                else
+                    self.subscribe(id, callback);
+            }
+        });
     },
 
-    unsubscribe: function (channel, pub) {
+    unsubscribe: function (channel, pub, myCallback) {
         console.log('unsubscribed');
         var str = pub.unsubscribe({
-            channel: String (channel),
+            channel : String(channel),
             callback: function (e) {
                 console.log(e);
+                if (myCallback)
+                    myCallback()
             }
         });
         console.log(str);
 
     },
 
-    hereNow    : function (channel, hereNowCallback) {
+    hereNow  : function (channel, hereNowCallback) {
         this.pub.here_now({
             channel : String(channel),
             callback: function (m) {
@@ -151,12 +153,12 @@ var pubFunctions = {
     //
     //     Channel with each user
     //
-    subscribe  : function (channel, userCallback) {
+    subscribe: function (channel, userCallback) {
         var self = this;
         var myPub = this.pub;
         var db = this.db;
         myPub.subscribe({
-            //restore:true,
+            restore  : false,
             channel  : channel,
             message  : function (m) {
                 if (typeof m != 'string') return;

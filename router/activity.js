@@ -162,7 +162,7 @@ router.get('/getPartners/', function (req, res) {
             db.userModel.where('activities').elemMatch({$in: [r.activity.parent_activity_id._id]})
                 .where('_id').ne(paramsReceived.session)
                 .and(andQuery)
-                .where('location').near({center: r.me.location})
+                .where('location').near({center: r.me.location, maxDistance: 300})
                 .limit(40)
                 .exec(function (e, users) {
                     if (!!users[0])
@@ -226,11 +226,10 @@ router.get('/getPartners/', function (req, res) {
                 parent_activity   : 0,
                 created           : new Date(),
                 icon              : null,
-                parent_activity_id: null
+                parent_activity_id: null,
+                hasChildren : false
             });
-            newActivity.save(function (e) {
-                db.activityModel.findOne({activity_id: r.maxActivityId})
-                    .exec(function (e, activity) {
+            newActivity.save(function (e, activity) {
                         var newUserActivity = db.userActivityModel({
                             user        : r.me.user,
                             user_id     : paramsReceived.session,
@@ -255,13 +254,37 @@ router.get('/getPartners/', function (req, res) {
                                 member: []
                             }
                         }));
-                    })
             });
 
         }
     });
 
 });
+
+router.get('/searchActivities/', function (req, res) {
+    var paramsReceived = req.query;
+    var orQuery = [];
+
+    if (paramsReceived.parentOnly != 'False')
+        orQuery.push({parent_activity : 0});
+
+    if (paramsReceived.hasChildren != 'False')
+        orQuery.push({hasChildren : true});
+    else
+        orQuery.push({hasChildren : false});
+
+    if (paramsReceived.searchStr)
+        orQuery.push({$regex:new RegExp(paramsReceived.searchStr, 'i')});
+    var skip = paramsReceived.searchNumber * 10;
+    db.activityModel.find()
+        .and(orQuery)
+        .sort('-created')
+        .skip(skip)
+        .limit (skip + 10)
+        .exec(function (e, activities) {
+            res.json(activities);
+        })
+} );
 
 
 module.exports = router;

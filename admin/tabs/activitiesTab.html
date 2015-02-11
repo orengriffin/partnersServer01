@@ -1,0 +1,42 @@
+<div id="activitiesWrapper" class="ui segment">
+    <div class="inline field">
+        <label class="ui"> Search for activities:</label>
+
+        <div class="ui selection dropdown" style="min-width:130px !important; width:120px">
+            <input type="hidden" name="saved">
+
+            <div id ='parents' class="default text">Parents Only</div>
+            <i class="dropdown icon"></i>
+
+            <div class="menu">
+                <div class="item" data-value="1">True</div>
+                <div class="item" data-value="0">False</div>
+            </div>
+        </div>
+        <div class="ui selection dropdown" style="min-width:130px !important; width:120px">
+            <input type="hidden" name="saved">
+
+            <div id ='hasChildren' class="default text">Has Children</div>
+            <i class="dropdown icon"></i>
+
+            <div class="menu">
+                <div class="item" data-value="1">True</div>
+                <div class="item" data-value="0">False</div>
+            </div>
+        </div>
+
+
+        <div class="ui icon input">
+            <input id='activitySearch' type="text" placeholder="Search...">
+            <i class="search link icon"></i>
+        </div>
+        <div id="search" class="ui right floated primary button" style="margin-top: 12px;">
+            Search
+        </div>
+        <br>
+
+    </div>
+    <div id="listActivities" class="ui divided list">
+
+    </div>
+</div>

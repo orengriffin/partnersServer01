@@ -17,6 +17,9 @@ $( document ).ready(function() {
     $("#users").load('tabs/usersTab.html', function () {
         initUsersTab();
     });
+    $("#activities").load('tabs/activitiesTab.html', function () {
+        initActivitiesTab();
+    });
 
     //
     setTimeout(function () {

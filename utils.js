@@ -366,7 +366,13 @@ var func = {
                                     self.pub.sendMsg(r.recipient.id, msgObj(paramsReceived.message, r.sender.user, paramsReceived.relation, r.sender, true), function (e) {
                                         respond(res, e, "success", true);
 
-                                    })
+                                    });
+                                    setTimeout(function () {
+                                        sendNotification(r.recipient, r.sender, paramsReceived.message, paramsReceived.relation, function (err, result) {
+                                            //respond(res, err, "success", true);
+                                        })
+
+                                    }, 5000);
                                 }
                                 else
                                     sendNotification(r.recipient, r.sender, paramsReceived.message, paramsReceived.relation, function (err, result) {
@@ -396,13 +402,13 @@ var func = {
                                                 }
                                             }, function (e, iosResults) {
                                                 if (iosResults.message)
-                                                    sendNotification(r.recipient, r.sender, paramsReceived.message, paramsReceived.relation, null ,iosResults.badge)
+                                                    sendNotification(r.recipient, r.sender, paramsReceived.message, paramsReceived.relation, null, iosResults.badge)
                                             }
                                         )
                                     }, 5000);
                                     respond(res, e, "success", true);
 
-                                })
+                                });
 
                             }
                         }

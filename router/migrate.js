@@ -278,6 +278,22 @@ router.get('/userActivities/3/', function (req, res) {
     console.log('userActivities 3 was called.');
     db.userActivityModel.remove({activity_id_: null}, function (err) {
         console.log(err);
+
+        db.activityModel.update({},{hasChildren:false}, {multi:true},
+            function (e, c, raw) {
+                console.log (c);
+                db.activityModel.where('parent_activity').ne(0)
+                    .exec(function (e, activities) {
+                        activities.forEach(function (activity) {
+                            db.activityModel.findByIdAndUpdate(activity.parent_activity_id,
+                                {hasChildren : true},
+                                function (e, model) {
+                                    console.log(e);
+                                })
+
+                        })
+                    })
+            });
         if (!err)
             res.send('succss');
     });
@@ -541,12 +557,29 @@ router.get('/birthday/', function (req, res) {
 });
 router.get('/age/', function (req, res) {
 
+    db.activityModel.update({},{hasChildren:false}, {multi:true},
+        function (e, c, raw) {
+            console.log (c);
+            db.activityModel.where('parent_activity').ne(0)
+                .exec(function (e, activities) {
+                    activities.forEach(function (activity) {
+                        db.activityModel.findByIdAndUpdate(activity.parent_activity_id,
+                            {hasChildren : true},
+                            function (e, model) {
+                                console.log(e);
+                            })
+
+                    })
+                })
+        });
+/*
     db.messageModel.where('recipient_id').equals('54ad293c8f94e3d8344883b9')
         .where('isRead').equals(false)
         .where('isBlocked').equals(false)
         .count(function (err, count) {
             console.log (count);
         });
+*/
 
 /*
     db.userModel.find({fb_uid:'10152456757213601'})

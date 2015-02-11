@@ -21,6 +21,8 @@ var func = {
     messageModel : null,
     pub          : null,
 
+    wasInit : false,
+
     init: function (mongoose) {
 
         var Schema = mongoose.Schema;
@@ -120,7 +122,8 @@ var func = {
             parent_activity_id: {type: Schema.Types.ObjectId, ref: 'activitie'},
             activity          : String,
             icon              : String,
-            created           : Date
+            created           : Date,
+            hasChildren       : Boolean
         });
         this.activityModel = mongoose.model('activitie', activitySchema);
 
@@ -168,7 +171,7 @@ var func = {
 
         this.partnersModel = mongoose.model('partner', partnersSchema);
 
-
+        this.wasInit = true;
         console.log('sucess!');
         pub.init();
     },
