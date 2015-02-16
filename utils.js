@@ -372,7 +372,7 @@ var func = {
                                             //respond(res, err, "success", true);
                                         })
 
-                                    }, 5000);
+                                    }, 0);
                                 }
                                 else
                                     sendNotification(r.recipient, r.sender, paramsReceived.message, paramsReceived.relation, function (err, result) {
@@ -405,7 +405,7 @@ var func = {
                                                     sendNotification(r.recipient, r.sender, paramsReceived.message, paramsReceived.relation, null, iosResults.badge)
                                             }
                                         )
-                                    }, 5000);
+                                    }, 0);
                                     respond(res, e, "success", true);
 
                                 });

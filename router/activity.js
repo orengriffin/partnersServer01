@@ -162,7 +162,8 @@ router.get('/getPartners/', function (req, res) {
             db.userModel.where('activities').elemMatch({$in: [r.activity.parent_activity_id._id]})
                 .where('_id').ne(paramsReceived.session)
                 .and(andQuery)
-                .where('location').near({center: r.me.location, maxDistance: 300})
+                //.find({location:{ $near :r.me.location, $maxDistance:3/111.12}})
+                .where('location').near({center: r.me.location})//, maxDistance: 1/111.12})
                 .limit(40)
                 .exec(function (e, users) {
                     if (!!users[0])

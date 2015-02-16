@@ -632,22 +632,30 @@ router.post('/newEnterApp/', function (req, res) {
         db.userModel.findOne({fb_uid: paramsReceived.fb_uid})
             .exec(function (e, user) {
                 if (user) { // update existing  user
-                    if (user.newVersion || paramsReceived.newVersion)
-                        pub.subscribe(user._id);
-                    utils.myForEach(paramsReceived, function (prop, val, next) {
-                        if (val && val != 'unknown' && String(user[prop]) != String(val)) {
-                            console.log('Updating ' + prop + ' with ' + val);
-                            user[prop] = val;
+                    async.parallel({
+                        pubSub: function (callback) {
+                            if (user.newVersion || paramsReceived.newVersion)
+                                pub.subscribe(user.id, function () {
+                                    callback(null,true);
+                                });
+                        },
+                        updateUser: function (callback) {
+                            utils.myForEach(paramsReceived, function (prop, val, next) {
+                                if (val && val != 'unknown' && String(user[prop]) != String(val)) {
+                                    console.log('Updating ' + prop + ' with ' + val);
+                                    user[prop] = val;
+                                }
+                                next();
+                            }, function () {
+                                callback(null,true);
+                            });
                         }
-                        next();
-                    }, function () {
-                        //utils.tellPartnersOnlineStatus(user.id, 'online');
-                        user.save(function (e) {
+                    }, function (e, res) {
+                        user.save(function (e, savedUser) {
                             console.log(user.first_name + ' ' + user.last_name + ' Has logged in and updated');
-                            respond(user);
+                            respond(savedUser);
                         });
                         console.log('finish');
-
                     });
                 }
                 else {  // create new user
