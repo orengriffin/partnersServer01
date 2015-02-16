@@ -635,7 +635,7 @@ router.post('/newEnterApp/', function (req, res) {
                     async.parallel({
                         pubSub: function (callback) {
                             if (user.newVersion || paramsReceived.newVersion)
-                                pub.subscribe(user.id, function () {
+                                pub.userOnline(user.id, function () {
                                     callback(null,true);
                                 });
                         },
