@@ -296,7 +296,7 @@ var func = {
             }, function (e, r) {
 
                 var isBLocked = (r.recipient.blockedUsers) ? (r.recipient.blockedUsers.indexOf(r.sender._id) != -1) : false;
-
+                console.log(r.recipient.newVersion);
                 var newMessage = self.db.messageModel({
                     sender      : r.sender.user,
                     sender_id   : r.sender._id,
@@ -306,7 +306,7 @@ var func = {
                     isRead      : false,
                     isBlocked   : isBLocked,
                     timeStamp   : Date.now(),
-                    time        : (r.recipient.newVersion) ? oldTime(new Date(Number(paramsReceived.cb))) : oldTime(new Date(Number(paramsReceived.cb) - 7200000))
+                    time        : (r.recipient.newVersion) ? oldTime(new Date(Number(paramsReceived.cb))) : oldTime(new Date(Number(paramsReceived.cb - 7200000)))
                 });
 
                 ['recipient', 'sender'].forEach(function (user, index) {
