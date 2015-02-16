@@ -37,14 +37,14 @@ function respond(res, error, message, isString) {
 }
 
 function oldTime(date) {
-    console.log(date);
+    console.log('3' + date);
     var oldDate = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate();
     var hour = date.getHours() + ':';
     hour += (date.getMinutes() > 10) ? date.getMinutes() : ('0' + date.getMinutes());
     hour += ':';
     hour += (date.getSeconds() > 10) ? date.getSeconds() : ('0' + date.getSeconds());
     var strRtn = (oldDate + ' ' + hour);
-    console.log(strRtn);
+    console.log('4' + strRtn);
     return strRtn;
 
 }
@@ -297,7 +297,9 @@ var func = {
             }, function (e, r) {
 
                 var isBLocked = (r.recipient.blockedUsers) ? (r.recipient.blockedUsers.indexOf(r.sender._id) != -1) : false;
-                console.log('newVersion ' + r.recipient.newVersion);
+                console.log('newVersion-1 ' + r.recipient.newVersion);
+                console.log('param01' +  paramsReceived.cb);
+                console.log('param02' +  new Date(Number (paramsReceived.cb)) );
                 var newMessage = self.db.messageModel({
                     sender      : r.sender.user,
                     sender_id   : r.sender._id,
