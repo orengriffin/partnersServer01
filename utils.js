@@ -301,6 +301,7 @@ var func = {
                 console.log('param01 ' +  paramsReceived.cb);
                 console.log('param02 ' +  new Date(Number (paramsReceived.cb)) );
                 var rightDate = new Date(Number(paramsReceived.cb));
+                console.log('033 ' + rightDate.getTimezoneOffset());
                 rightDate =  rightDate.getTime() -  rightDate.getTimezoneOffset()* 60000;
                 var newMessage = self.db.messageModel({
                     sender      : r.sender.user,
