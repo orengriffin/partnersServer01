@@ -302,7 +302,7 @@ var func = {
                 console.log('param02 ' +  new Date(Number (paramsReceived.cb)) );
                 var rightDate = new Date(Number(paramsReceived.cb));
                 console.log('033 ' + rightDate.getTimezoneOffset());
-                rightDate =  rightDate.getTime() -  rightDate.getTimezoneOffset()* 60000;
+                rightDate =  rightDate.getTime() +  rightDate.getTimezoneOffset()* 60000;
                 var newMessage = self.db.messageModel({
                     sender      : r.sender.user,
                     sender_id   : r.sender._id,
@@ -312,7 +312,7 @@ var func = {
                     isRead      : false,
                     isBlocked   : isBLocked,
                     timeStamp   : Date.now(),
-                    time        : (r.recipient.newVersion) ? oldTime(new Date(Number(rightDate))) : oldTime(new Date(Number(paramsReceived.cb - 7200000)))
+                    time        : (r.recipient.newVersion) ? oldTime(new Date(Number(rightDate))) : oldTime(new Date(Number(rightDate - 7200000)))
                 });
 
                 ['recipient', 'sender'].forEach(function (user, index) {
