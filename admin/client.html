@@ -19,7 +19,7 @@
 <button onclick="test()"> chckmypartners</button>
 <button onclick="autocomplete()"> autocomplete</button>
 <button onclick="updateLocation()"> location</button>
-<button onclick="stranger()"> stranger</button>
+<button onclick="getNear()"> getNear</button>
 <button onclick="notifi()"> notifi</button>
 <button onclick="settings()"> settings</button>
 <button onclick="getPreLoginSettings()"> getPreLoginSettings</button>
@@ -91,6 +91,7 @@
         </td>
         <td class="tg-s6z2">
             <button>2</button>
+            ]
         </td>
     </tr>
     <tr>
@@ -407,11 +408,11 @@
                 localPartnersToAdd.push({user: partners[i]});
         }
         $.ajax({
-                    type:'POST',
+                    type   : 'POST',
                     url    : 'http://localhost:3010/user/specificPartners',
                     data   : {
-                        session :'54ad293c8f94e3d8344883ae',
-                        partners: JSON.stringify (localPartnersToAdd)
+                        session : '54ad293c8f94e3d8344883ae',
+                        partners: JSON.stringify(localPartnersToAdd)
 
                     },
                     success: function (response) {
@@ -421,6 +422,33 @@
                 }
         );
         console.log(localPartnersToAdd);
+    }
+    function getNear() {
+        var params = {};
+        params['search_female'] = 1;
+        /* Set if search for males */
+        params['search_male'] = 1;
+        /* Set Max Age */
+        params['max_age'] = 89;
+        params['min_age'] = 17;
+
+        params.session = '54ad293c8f94e3d8344883ae';
+
+        $.ajax({
+                    type   : 'POST',
+                    url    : 'http://localhost:3010/user/getNearPartners',
+                    data   : {
+                        session : '54ad293c8f94e3d8344883ae',
+                        partners: params
+
+                    },
+                    success: function (response) {
+
+                        console.log(JSON.parse(response))
+                    }
+                }
+        );
+//        console.log(localPartnersToAdd);
     }
 
 </script>

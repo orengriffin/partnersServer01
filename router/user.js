@@ -69,11 +69,11 @@ router.post('/removePartners/', function (req, res) {
 
     console.log('removePartners');
 
-        db.userModel.findByIdAndUpdate(paramsReceived.session,
-            {$pull: {partners: {partner_num: paramsReceived.partner_id}}},
-            function (e, count, raw) {
-                respond(res, e, 'success', true);
-            });
+    db.userModel.findByIdAndUpdate(paramsReceived.session,
+        {$pull: {partners: {partner_num: paramsReceived.partner_id}}},
+        function (e, count, raw) {
+            respond(res, e, 'success', true);
+        });
 });
 router.post('/setPartners/', function (req, res) {
     var paramsReceived = req.body;
@@ -119,7 +119,7 @@ router.post('/setPartners/', function (req, res) {
         if (!NOneedToAddPartner)
             results.me.partners.addToSet({
                 partner_id       : results.partner.id,
-                partner_num       : paramsReceived.partner_id,
+                partner_num      : paramsReceived.partner_id,
                 activity_relation: results.activityId,
                 created          : time
             });
@@ -209,7 +209,7 @@ router.get('/newGetPartnersList/', function (req, res) {
         partner.location = (me.location[0]) ? utils.distanceCalc(
             {lon: me.location[0], lat: me.location[1]},
             {longitude: locationArray[0], latitude: locationArray[1]}) : "";
-        console.log (partner.location);
+        console.log(partner.location);
 
         delete partner._id;
         delete partner.activities;
@@ -516,7 +516,7 @@ router.post('/enterApp/', function (req, res) {
             delete paramsReceived.latitude;
         }
         else {
-            console.log('no locaction recieved');
+            console.log('no location recieved');
             delete paramsReceived.location;
         }
 
@@ -607,7 +607,7 @@ router.post('/newEnterApp/', function (req, res) {
 
         var respond = function (user) {
             var partnersArray = [];
-            user.partners.forEach (function (partner, index) {
+            user.partners.forEach(function (partner, index) {
                 partnersArray.push(partner.partner_num);
                 if (index + 1 == user.partners.length)
                     res.send(
@@ -622,7 +622,7 @@ router.post('/newEnterApp/', function (req, res) {
                                 },
                                 uid          : user.user,
                                 session      : user._id + '',
-                                partners: partnersArray
+                                partners     : partnersArray
                             }
                         });
 
@@ -633,10 +633,10 @@ router.post('/newEnterApp/', function (req, res) {
             .exec(function (e, user) {
                 if (user) { // update existing  user
                     async.parallel({
-                        pubSub: function (callback) {
+                        pubSub    : function (callback) {
                             if (user.newVersion || paramsReceived.newVersion)
                                 pub.userOnline(user.id, function () {
-                                    callback(null,true);
+                                    callback(null, true);
                                 });
                         },
                         updateUser: function (callback) {
@@ -647,7 +647,7 @@ router.post('/newEnterApp/', function (req, res) {
                                 }
                                 next();
                             }, function () {
-                                callback(null,true);
+                                callback(null, true);
                             });
                         }
                     }, function (e, res) {
@@ -782,17 +782,16 @@ router.post('/blockUser', function (req, res) {
 });
 router.post('/specificPartners', function (req, res) {
     var paramsReceived = req.body;
-    var partners = JSON.parse( paramsReceived.partners);
+    var partners = JSON.parse(paramsReceived.partners);
 
     db.userModel.findById(paramsReceived.session)
         .populate('partners.activity_relation')
         .exec(function (e, me) {
             var relationObj = {};
-            me.partners.forEach (function (partner, index) {
-                relationObj['user_'+ String(partner.partner_num)] = partner.activity_relation.activity;
+            me.partners.forEach(function (partner, index) {
+                relationObj['user_' + String(partner.partner_num)] = partner.activity_relation.activity;
                 console.log(relationObj);
-                if (index  + 1 == me.partners.length )
-                {
+                if (index + 1 == me.partners.length) {
                     db.userModel.find()
                         .or(partners)
                         .select('fb_uid user first_name last_name image')
@@ -800,18 +799,42 @@ router.post('/specificPartners', function (req, res) {
                             var partnersToReturn = [];
                             partners.forEach(function (partner, index) {
                                 partnersToReturn.push(partner._doc);
-                                partnersToReturn[index].relation = relationObj['user_' +partner.user];
+                                partnersToReturn[index].relation = relationObj['user_' + partner.user];
                                 if (partners.length == index + 1)
-                                    respond(res,e,{partners:partnersToReturn},true);
+                                    respond(res, e, {partners: partnersToReturn}, true);
 
                             })
                         })
 
                 }
-            } )
+            })
         })
 
-} );
+});
+
+router.post('/getNearPartners', function (req, res) {
+    var paramsReceived = req.body;
+    var membersToReturn = [];
+
+    db.userModel.findById(paramsReceived.session)
+        .select('location activities blockedUsers')
+        .exec(function (e, me) {
+            db.userModel.where('location')
+                .where('_id').ne(paramsReceived.session)
+                .and(utils.returnAgeGenderQuery(paramsReceived))
+                .populate('activities')
+                .where('location').near(me.location)
+                .limit(1)
+                .exec(function (e, users) {
+                    users.forEach(function (user) {
+                        membersToReturn.push(utils.returnSearchedMember(me, user));
+
+                    });
+                    console.log(membersToReturn);
+                    res.send(membersToReturn);
+                })
+        })
+});
 
 
 module.exports = router;

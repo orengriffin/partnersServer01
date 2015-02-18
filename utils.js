@@ -265,6 +265,68 @@ var func = {
 
     },
 
+    returnAgeGenderQuery: function (params) {
+        var genderQuery = [
+            {gender: 'female'},
+            //{gender: 'unknown'},
+            {gender: 'male'}
+        ];
+        if ((typeof params['search_female']) != 'undefined' && !Number(params['search_female']))
+            genderQuery.shift();
+
+        if ((typeof params['search_male']) != 'undefined' && !Number(params['search_male']))
+            genderQuery.pop();
+
+        var ageQuery = [
+            {age: {$gt: (!!Number(params['min_age'])) ? Number(params['min_age']) : 17}},
+            {age: {$lt: (!!Number(params['max_age'])) ? Number(params['max_age']) : 89}}
+        ];
+
+        var andQuery = [{$or: genderQuery},
+            {$and: ageQuery}
+        ];
+        if (ageQuery[0].age['$gt'] == 17 && ageQuery[1].age['$lt'] == 89) {
+            genderQuery.push({age: null});
+            andQuery.pop();
+
+        }
+        return andQuery;
+    },
+
+    returnSearchedMember: function (me, user) {
+        return {
+            user            : user.user,
+            image           : user.image,
+            first_name      : user.first_name,
+            last_name       : user.last_name,
+            //last_seen  : (user.isOnline) ? " " : utils.timeCalc(user.last_visit, 0),
+            location        : this.distanceCalc(
+                {lon: me.location[0], lat: me.location[1]},
+                {longitude: user.location[0], latitude: user.location[1]}),// / 1000,
+            is_online       : (user.isOnline) ? 1 : 0,
+            //is_partners: isMembers ? 1 : 0,
+            age             : (!!user.birthday) ? this.ageCalc(user.birthday) : '',
+            isBlocked       : me.blockedUsers.indexOf(user.id) != -1,
+            sharedActivities: this.getSharedActivities(me, user)
+        }
+    },
+
+    getSharedActivities: function (me, user) {
+        var activitiesToReturn = [];
+        var userActivities = user.activities;
+        me.activities.forEach(function (activityId, index) {
+            userActivities.some(function (userActivity) {
+                if (activityId.equals(userActivity.id)) {
+                    activitiesToReturn.push(userActivity.activity);
+                    return true;
+                }
+            });
+            //if (this.length == index +1)
+            //    return
+        }, me.activities);
+        return (activitiesToReturn[0]) ? activitiesToReturn : ''
+    },
+
     sendMessage: function (paramsReceived, res, notToSave) {
         {
             var self = this;
@@ -298,11 +360,11 @@ var func = {
 
                 var isBLocked = (r.recipient.blockedUsers) ? (r.recipient.blockedUsers.indexOf(r.sender._id) != -1) : false;
                 console.log('newVersion-1 ' + r.recipient.newVersion);
-                console.log('param01 ' +  paramsReceived.cb);
-                console.log('param02 ' +  new Date(Number (paramsReceived.cb)) );
+                console.log('param01 ' + paramsReceived.cb);
+                console.log('param02 ' + new Date(Number(paramsReceived.cb)));
                 var rightDate = new Date(Number(paramsReceived.cb));
                 console.log('033 ' + rightDate.getTimezoneOffset());
-                rightDate =  rightDate.getTime() +  rightDate.getTimezoneOffset()* 60000;
+                rightDate = rightDate.getTime() + rightDate.getTimezoneOffset() * 60000;
                 var newMessage = self.db.messageModel({
                     sender      : r.sender.user,
                     sender_id   : r.sender._id,

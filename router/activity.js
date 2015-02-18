@@ -129,8 +129,9 @@ router.get('/getPartners/', function (req, res) {
             });
 
             var membersToReturn = [];
+            var andQuery =  utils.returnAgeGenderQuery(paramsReceived);
 
-            var genderQuery = [
+ /*           var genderQuery = [
                 {gender: 'female'},
                 //{gender: 'unknown'},
                 {gender: 'male'}
@@ -158,16 +159,18 @@ router.get('/getPartners/', function (req, res) {
             console.log(genderQuery);
             console.log(ageQuery);
             console.log(andQuery);
-
+*/
             db.userModel.where('activities').elemMatch({$in: [r.activity.parent_activity_id._id]})
                 .where('_id').ne(paramsReceived.session)
                 .and(andQuery)
                 //.find({location:{ $near :r.me.location, $maxDistance:3/111.12}})
                 .where('location').near({center: r.me.location})//, maxDistance: 1/111.12})
+                .populate('activities')
                 .limit(40)
                 .exec(function (e, users) {
                     if (!!users[0])
                         users.forEach(function (user) {
+/*
                             var idToDell = null;
                             var isMembers = this.me.partners.some(function (partner) {
                                 if (!!partner.partner_id.equals(user._id)) {
@@ -193,8 +196,10 @@ router.get('/getPartners/', function (req, res) {
                                 isBlocked  : this.me.blockedUsers.indexOf(user.id) != -1
 
                             });
+*/
+                            membersToReturn.push(utils.returnSearchedMember(this.me,user));
 
-                            var str = user.last_name + ' ' + user.first_name + ' ' +
+                                var str = user.last_name + ' ' + user.first_name + ' ' +
                                 user.location[0] + ', ' + user.location[1] + ' age: ' + user.age + ' gender: ' + user.gender;
                             console.log(str);
 
