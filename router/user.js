@@ -815,7 +815,7 @@ router.post('/specificPartners', function (req, res) {
 router.post('/getNearPartners', function (req, res) {
     var paramsReceived = req.body;
     var membersToReturn = [];
-
+    var searchIteration = paramsReceived.searchIteration;
     db.userModel.findById(paramsReceived.session)
         .select('location activities blockedUsers')
         .exec(function (e, me) {
@@ -824,14 +824,15 @@ router.post('/getNearPartners', function (req, res) {
                 .and(utils.returnAgeGenderQuery(paramsReceived))
                 .populate('activities')
                 .where('location').near(me.location)
-                .limit(10)
+                .skip((searchIteration-1) * 40)
+                .limit(40)
                 .exec(function (e, users) {
                     users.forEach(function (user) {
                         membersToReturn.push(utils.returnSearchedMember(me, user));
-
                     });
+                    membersToReturn.push({searched:paramsReceived});
                     console.log(membersToReturn);
-                    res.send(membersToReturn);
+                    res.send({searched:paramsReceived ,members:membersToReturn});
                 })
         })
 });
