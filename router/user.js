@@ -824,7 +824,7 @@ router.post('/getNearPartners', function (req, res) {
                 .and(utils.returnAgeGenderQuery(paramsReceived))
                 .populate('activities')
                 .where('location').near(me.location)
-                .limit(1)
+                .limit(10)
                 .exec(function (e, users) {
                     users.forEach(function (user) {
                         membersToReturn.push(utils.returnSearchedMember(me, user));
