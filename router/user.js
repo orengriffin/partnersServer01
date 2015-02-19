@@ -830,7 +830,6 @@ router.post('/getNearPartners', function (req, res) {
                     users.forEach(function (user) {
                         membersToReturn.push(utils.returnSearchedMember(me, user));
                     });
-                    membersToReturn.push({searched:paramsReceived});
                     console.log(membersToReturn);
                     res.send({searched:paramsReceived ,members:membersToReturn});
                 })
