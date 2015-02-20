@@ -198,7 +198,6 @@ router.get('/getPartners/', function (req, res) {
                             });
 */
                             membersToReturn.push(utils.returnSearchedMember(this.me,user));
-
                                 var str = user.last_name + ' ' + user.first_name + ' ' +
                                 user.location[0] + ', ' + user.location[1] + ' age: ' + user.age + ' gender: ' + user.gender;
                             console.log(str);

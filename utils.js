@@ -215,9 +215,8 @@ var func = {
         var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
         var d = R * c * 1000;
-        if ((d / 100) <= 1)
-            return 1 / 100;
-        return ( (d / 100) < 10 ) ? (parseInt(d) / 100) : (parseInt(d / 10) / 100);
+
+        return parseInt(d) / 1000
     },
 
     ageCalc: function (birthday) {

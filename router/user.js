@@ -822,7 +822,7 @@ router.post('/getNearPartners', function (req, res) {
                 .populate('activities')
                 .where('location').near({
                     center: me.location,
-                    maxDistance :parseFloat(1/111.12),
+                    maxDistance :parseFloat(5/6371),
                     spherical: true
                 })
                 .skip((searchIteration-1) * 40)
