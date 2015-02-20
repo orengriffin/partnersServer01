@@ -802,14 +802,11 @@ router.post('/specificPartners', function (req, res) {
                                 partnersToReturn[index].relation = relationObj['user_' + partner.user];
                                 if (partners.length == index + 1)
                                     respond(res, e, {partners: partnersToReturn}, true);
-
                             })
                         })
-
                 }
             })
         })
-
 });
 
 router.post('/getNearPartners', function (req, res) {
@@ -823,7 +820,11 @@ router.post('/getNearPartners', function (req, res) {
                 .where('_id').ne(paramsReceived.session)
                 .and(utils.returnAgeGenderQuery(paramsReceived))
                 .populate('activities')
-                .where('location').near(me.location)
+                .where('location').near({
+                    center: me.location,
+                    maxDistance :parseFloat(1/111.12),
+                    spherical: true
+                })
                 .skip((searchIteration-1) * 40)
                 .limit(40)
                 .exec(function (e, users) {
