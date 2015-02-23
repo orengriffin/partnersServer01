@@ -817,19 +817,23 @@ router.post('/getNearPartners', function (req, res) {
         .select('location activities blockedUsers')
         .exec(function (e, me) {
             db.userModel.where('location')
+
                 .where('_id').ne(paramsReceived.session)
                 .and(utils.returnAgeGenderQuery(paramsReceived))
                 .populate('activities')
                 .where('location').near({
                     center: me.location,
-                    maxDistance :parseFloat(5/6371),
+                    maxDistance :parseFloat(100/6371),
                     spherical: true
                 })
-                .skip((searchIteration-1) * 40)
-                .limit(40)
+                .skip((searchIteration-1) * 30)
+                .limit(31)
                 .exec(function (e, users) {
-                    users.forEach(function (user) {
-                        membersToReturn.push(utils.returnSearchedMember(me, user));
+                    users.forEach(function (user, index) {
+                        if (index == 30)
+                            paramsReceived.showMore = true;
+                        else
+                            membersToReturn.push(utils.returnSearchedMember(me, user));
                     });
                     console.log(membersToReturn);
                     res.send({searched:paramsReceived ,members:membersToReturn});

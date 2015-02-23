@@ -26,43 +26,36 @@ function respond(res, error, message, isString) {
 
 router.get('/search/', function (req, res) {
     console.log('auto-complete');
+    var returnLimit = 5;
 
     var paramsReceived = req.query;
-    var activitiesToReturn = [];
     db.activityModel.aggregate([
         {$match: {activity: {$regex: new RegExp('^' + paramsReceived.activity, 'i')}}},
         {
             $group: {
                 _id: {parent: "$parent_activity"},
                 act: {$push: {activity: "$activity", activity_id: '$activity_id'}}
-                //parent: '$parent_activity'
-
             }
         },
         {$project: {act: 1, parent_activity: 1}},
         {$sort:{"_id.parent":1}}
     ])
-        //.match({activity:})
-        //.where('activity')
-        //.regex(new RegExp('^' + paramsReceived.activity, 'i'))
-        //.where('parent_activity').equals(0)
-        //.select('activity activity_id created parent_activity')
-        .limit(10)
+        .limit(15)
         .exec(function (e, activities) {
             var arrOfAcvitivities = [], mainIndex = 0;
-            if (mainIndex != 3)
+            if (mainIndex != returnLimit)
                 activities.some(function (activity, index) {
                     if (!index && !activity._id.parent)
                         activities[0].act.some(function (activity) {
                             arrOfAcvitivities.push(activity.activity_id);
-                            if (arrOfAcvitivities.length == 3)
+                            if (arrOfAcvitivities.length == returnLimit)
                                 return true;
                         });
                     else
-                    if (arrOfAcvitivities.length < 3) {
+                    if (arrOfAcvitivities.length < returnLimit) {
                         if (arrOfAcvitivities.indexOf(activity._id.parent) == -1)
                             arrOfAcvitivities.push(activity._id.parent);
-                        if (arrOfAcvitivities.length == 3)
+                        if (arrOfAcvitivities.length == returnLimit)
                             return true;
                     }
 
@@ -106,7 +99,7 @@ router.get('/getPartners/', function (req, res) {
 
         me      : function (callback) {
             db.userModel.findById(paramsReceived.session)
-                .select('location partners user activities blockedUsers')
+                .select('location partners user activities blockedUsers newVersion')
                 .exec(function (e, me) {
                     callback(e, me)
                 });
@@ -122,7 +115,7 @@ router.get('/getPartners/', function (req, res) {
         }
     }, function (e, r) {
         if (r.activity) {
-
+            var searchIteration = paramsReceived.searchIteration;
             r.me.activities.addToSet(r.activity.parent_activity_id._id);
             r.me.save(function (e) {
                 console.log('added activity after search' + e);
@@ -163,13 +156,17 @@ router.get('/getPartners/', function (req, res) {
             db.userModel.where('activities').elemMatch({$in: [r.activity.parent_activity_id._id]})
                 .where('_id').ne(paramsReceived.session)
                 .and(andQuery)
-                //.find({location:{ $near :r.me.location, $maxDistance:3/111.12}})
-                .where('location').near({center: r.me.location})//, maxDistance: 1/111.12})
+                .where('location').near({
+                    center: r.me.location,
+                    maxDistance :parseFloat(100/6371),
+                    spherical: true
+                })
                 .populate('activities')
-                .limit(40)
+                .skip((searchIteration-1) * 30)
+                .limit(31)
                 .exec(function (e, users) {
                     if (!!users[0])
-                        users.forEach(function (user) {
+                        users.forEach(function (user, index) {
 /*
                             var idToDell = null;
                             var isMembers = this.me.partners.some(function (partner) {
@@ -197,31 +194,37 @@ router.get('/getPartners/', function (req, res) {
 
                             });
 */
-                            membersToReturn.push(utils.returnSearchedMember(this.me,user));
                                 var str = user.last_name + ' ' + user.first_name + ' ' +
                                 user.location[0] + ', ' + user.location[1] + ' age: ' + user.age + ' gender: ' + user.gender;
                             console.log(str);
 
-                            if (membersToReturn.length == this.len) {
+                            if (membersToReturn.length == this.len - 1) {
+                                paramsReceived.showMore = (this.len == 31);
                                 console.log('finish');
+                                var newMembersObj = (r.me.newVersion) ?  {searched:paramsReceived ,members:membersToReturn} : membersToReturn;
                                 respond(res, e, {
                                     status : 0,
                                     data   : this.activity,
-                                    members: membersToReturn
+                                    members: newMembersObj
                                 }, true);
                             }
-
+                            else
+                                membersToReturn.push(utils.returnSearchedMember(this.me,user));
                         }, {
                             len     : users.length,
                             activity: r.activity.parent_activity_id,
                             me      : r.me
                         });
                     else
+                    {
+                        var newMembersObj = (r.me.newVersion) ?  {searched:paramsReceived ,members:membersToReturn} : membersToReturn;
                         respond(res, e, {
                             status : 0,
-                            members: [],
+                            members: newMembersObj,
                             data   : this.activity
                         }, true);
+
+                    }
                 })
         }
         else {
