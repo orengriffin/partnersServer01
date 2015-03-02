@@ -6,22 +6,27 @@ var utils = require('./utils');
 
 var pubFunctions = {
 
-    pub: null,
-    db : null,
+    pub         : null,
+    db          : null,
+    publishKey  : process.env.PUBNUB_PUBLISH_KEY,
+    subscribeKey: process.env.PUBNUB_SUBSCRIBE_KEY,
 
     init           : function () {
         this.db = require('./mymongoose');
         this.pub = require("pubnub")({
             ssl          : true,
             uuid         : 'partnersServer',
-            publish_key  : 'pub-c-78bc252c-b8e5-4093-877e-bf52f7d24963',
-            subscribe_key: 'sub-c-540acdd2-96a2-11e4-ae17-02ee2ddab7fe'
-            //publish_key  : process.env.PUBNUB_PUBLISH_KEY,
-            //subscribe_key: process.env.PUBNUB_SUBSCRIBE_KEY
+            publish_key  : this.publishKey,
+            subscribe_key: this.subscribeKey,
         });
+
         utils.init();
         this.subscribeToMain();
+    },
 
+    setKeys : function (p, s) {
+        this.publishKey = p;
+        this.subscribeKey = s;
     },
     subscribeToMain: function () {
         var db = this.db;

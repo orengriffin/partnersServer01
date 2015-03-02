@@ -9,8 +9,9 @@
     "async": "*",
     "node-gcm": "*",
     "apn": "*",
-    "rand-token" : "*"
-
+    "rand-token": "*",
+    "fs": "*",
+    "sendgrid" : "*"
   },
   "subdomain": "undefined-whispering-cove-2135",
   "scripts": {

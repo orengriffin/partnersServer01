@@ -21,7 +21,7 @@ var func = {
     messageModel : null,
     pub          : null,
 
-    wasInit : false,
+    wasInit: false,
 
     init: function (mongoose) {
 
@@ -81,11 +81,13 @@ var func = {
             location          : {type: [Number], index: '2dsphere'},
             udid              : String,
             session           : String,
-            notify_partner    : Boolean,
-            email_notification: Boolean,
+            notify_partner    : {type: Boolean, default:true},
+            email_notification: {type: Boolean, default:true},
             platform          : String,
             last_update       : String,
             age               : Number,
+            channel           : String,
+            lastMailDate      : Date,
             relations         : [{
                 partner_id: {type: Schema.Types.ObjectId, ref: 'user'},
                 relation  : String
@@ -181,7 +183,7 @@ var func = {
         this.userModel.findByIdAndUpdate(id,
             {last_visit: new Date(Number(time))},
             function (e, user) {
-                console.log()
+                console.log('cb updated');
             })
 
     }

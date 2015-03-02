@@ -206,6 +206,7 @@ router.get('/newGetPartnersList/', function (req, res) {
             partner.relation = me.partners[i].activity_relation.activity;
         //partner.two_way_trust = 1;
         partner.is_online = (partner.isOnline) ? 1 : 0;
+        partner.last_seen = (partner.isOnline) ? ' ' : utils.timeCalc(partner.last_visit, 0);
         partner.location = (me.location[0]) ? utils.distanceCalc(
             {lon: me.location[0], lat: me.location[1]},
             {longitude: locationArray[0], latitude: locationArray[1]}) : "";
@@ -629,6 +630,7 @@ router.post('/newEnterApp/', function (req, res) {
             }, user);
 
         };
+        //var channel ='-' + Date.now().getTime();
         db.userModel.findOne({fb_uid: paramsReceived.fb_uid})
             .exec(function (e, user) {
                 if (user) { // update existing  user
@@ -638,6 +640,11 @@ router.post('/newEnterApp/', function (req, res) {
                                 pub.userOnline(user.id, function () {
                                     callback(null, true);
                                 });
+/*
+                            pub.subscribe(user.id+channel, function () {
+                                callback(null,true);
+                            })
+*/
                         },
                         updateUser: function (callback) {
                             utils.myForEach(paramsReceived, function (prop, val, next) {
@@ -652,6 +659,7 @@ router.post('/newEnterApp/', function (req, res) {
                         }
                     }, function (e, res) {
                         user.save(function (e, savedUser) {
+                            //savedUser.channel = channel;
                             console.log(user.first_name + ' ' + user.last_name + ' Has logged in and updated');
                             respond(savedUser);
                         });
@@ -814,7 +822,7 @@ router.post('/getNearPartners', function (req, res) {
     var membersToReturn = [];
     var searchIteration = paramsReceived.searchIteration;
     db.userModel.findById(paramsReceived.session)
-        .select('location activities blockedUsers')
+        .select('location activities blockedUsers partners')
         .exec(function (e, me) {
             db.userModel.where('location')
 
@@ -823,19 +831,20 @@ router.post('/getNearPartners', function (req, res) {
                 .populate('activities')
                 .where('location').near({
                     center: me.location,
-                    maxDistance :parseFloat(100/6371),
+                    maxDistance :parseFloat(100/6371), // maxDistance -  100 Km
                     spherical: true
                 })
                 .skip((searchIteration-1) * 30)
                 .limit(31)
                 .exec(function (e, users) {
                     users.forEach(function (user, index) {
+                        if (!user.fb_uid) return;
                         if (index == 30)
                             paramsReceived.showMore = true;
                         else
                             membersToReturn.push(utils.returnSearchedMember(me, user));
                     });
-                    console.log(membersToReturn);
+                    //console.log(membersToReturn);
                     res.send({searched:paramsReceived ,members:membersToReturn});
                 })
         })

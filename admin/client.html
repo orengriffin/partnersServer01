@@ -23,6 +23,8 @@
 <button onclick="notifi()"> notifi</button>
 <button onclick="settings()"> settings</button>
 <button onclick="getPreLoginSettings()"> getPreLoginSettings</button>
+<!--<button onclick="addComon()"> addComon</button>-->
+<button onclick="updateComon()"> update</button>
 <style type="text/css">
     .tg {
         border-collapse: collapse;
@@ -318,6 +320,35 @@
             error  : function (res) {
                 $(this).parent().css('background-color', 'red');
                 console.log(res);
+            }
+        })
+    }
+    function addComon() {
+        $.ajax({
+            url    : 'http://localhost:3010/migrate/addComon',
+            success: function (res) {
+                console.log(res);
+            },
+            error  : function (res) {
+                $(this).parent().css('background-color', 'red');
+                console.log(res);
+            }
+        })
+    }
+    function updateComon() {
+        $.ajax({
+            url    : 'http://localhost:3010/migrate/updateComon',
+            data   : {
+                newCommon : 'Many In Common',
+                newGeneral: 'From Your Area',
+                oldCommon : 'Common',
+                oldGeneral: 'General'
+            },
+            success: function (res) {
+                console.log(res);
+            },
+            error  : function (res) {
+                $(this).parent().css('background-color', 'red');
             }
         })
     }

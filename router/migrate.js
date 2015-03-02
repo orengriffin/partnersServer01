@@ -5,6 +5,8 @@ var express = require('express');
 var router = express.Router();
 var db = require('./../mymongoose');
 var utils = require('./../utils');
+var async = require('async');
+
 
 
 router.get('/get', function (req, res) {
@@ -278,15 +280,16 @@ router.get('/userActivities/3/', function (req, res) {
     console.log('userActivities 3 was called.');
     db.userActivityModel.remove({activity_id_: null}, function (err) {
         console.log(err);
+        //addCommonActivities('Comon')
 
-        db.activityModel.update({},{hasChildren:false}, {multi:true},
+        db.activityModel.update({}, {hasChildren: false}, {multi: true},
             function (e, c, raw) {
-                console.log (c);
+                console.log(c);
                 db.activityModel.where('parent_activity').ne(0)
                     .exec(function (e, activities) {
                         activities.forEach(function (activity) {
                             db.activityModel.findByIdAndUpdate(activity.parent_activity_id,
-                                {hasChildren : true},
+                                {hasChildren: true},
                                 function (e, model) {
                                     console.log(e);
                                 })
@@ -299,6 +302,85 @@ router.get('/userActivities/3/', function (req, res) {
     });
 
 });
+
+function updateCommonActivities(oldCommonActivityStr, oldGeneralActivityStr, newCommonActivityStr, newGeneralActivityStr, mainCallback) {
+    async.parallel({
+        updateCommon : function (callback) {
+            db.activityModel.findOneAndUpdate(
+                {activity: oldCommonActivityStr},
+                {activity: newCommonActivityStr},
+                function (e, c) {
+                    callback(null, (!e && c))
+                })
+        },
+        updateGeneral: function (callback) {
+            db.activityModel.findOneAndUpdate(
+                {activity: oldGeneralActivityStr},
+                {activity: newGeneralActivityStr},
+                function (e, c) {
+                    callback(null, (!e && c))
+                })
+        }
+
+    }, function (e, results) {
+        if (mainCallback)
+            mainCallback(results.updateCommon && results.updateGeneral);
+    })
+}
+
+function addCommonActivities(commonActivityStr, generalActivityStr, mainCallback) {
+    db.activityModel.findOne({})
+        .select('activity_id')
+        .sort('-activity_id')
+        .exec(function (e, max) {
+            var max = max.activity_id + 1;
+
+            var commonActivity = db.activityModel({
+                activity_id       : max,
+                activity          : commonActivityStr,
+                parent_activity   : 0,
+                created           : new Date(),
+                icon              : null,
+                parent_activity_id: null,
+                hasChildren       : false
+            });
+            max++;
+            var generalActivity = db.activityModel({
+                activity_id       : max,
+                activity          : generalActivityStr,
+                parent_activity   : 0,
+                created           : new Date(),
+                icon              : null,
+                parent_activity_id: null,
+                hasChildren       : false
+            });
+
+            async.parallel({
+                commonActivitySaved: function (callback) {
+                    commonActivity.save(function (e, activity) {
+                        activity.parent_activity_id = activity._id;
+                        commonActivity.save(function (e) {
+                            callback(null, !e);
+                        })
+                    });
+                },
+                generalAcvitySaved : function (callback) {
+                    generalActivity.save(function (e, activity) {
+                        activity.parent_activity_id = activity._id;
+                        generalActivity.save(function (e) {
+                            callback(null, !e);
+                        })
+                    });
+
+                }
+            }, function (e, results) {
+                if (mainCallback)
+                    mainCallback((results.commonActivitySaved && results.generalAcvitySaved) ? 'Success' : 'failure')
+            });
+
+        });
+
+}
 
 router.get('/partners/1/', function (req, res) {
     console.log('partners 1 was called');
@@ -394,17 +476,16 @@ router.get('/partners/4/', function (req, res) {
         .exec(function (e, users) {
             users.forEach(function (user) {
                 user.partners.forEach(function (partner, index) {
-                    if (partner.partner_id)
-                    {
+                    if (partner.partner_id) {
 
                         partner.partner_num = partner.partner_id.user;
-                    if (this.partners.length == index + 1)
-                        this.save(function (e) {
-                            console.log(e);
-                        });
+                        if (this.partners.length == index + 1)
+                            this.save(function (e) {
+                                console.log(e);
+                            });
                     }
                     else
-                        console.log ('wtf');
+                        console.log('wtf');
                 }, user)
             })
         })
@@ -555,16 +636,34 @@ router.get('/birthday/', function (req, res) {
         });
 
 });
+router.get('/addComon/', function (req, res) {
+    addCommonActivities('Comon', 'Genera', function (stringToRespond) {
+        res.send(stringToRespond);
+    })
+
+});
+router.get('/updateComon/', function (req, res) {
+    var paramsReceived = req.query;
+
+    updateCommonActivities(paramsReceived.oldCommon, paramsReceived.oldGeneral,
+        paramsReceived.newCommon, paramsReceived.newGeneral,
+        function (success) {
+            res.send((success) ? 'Success' : 'failure')
+        })
+
+
+});
+
 router.get('/age/', function (req, res) {
 
-    db.activityModel.update({},{hasChildren:false}, {multi:true},
+    db.activityModel.update({}, {hasChildren: false}, {multi: true},
         function (e, c, raw) {
-            console.log (c);
+            console.log(c);
             db.activityModel.where('parent_activity').ne(0)
                 .exec(function (e, activities) {
                     activities.forEach(function (activity) {
                         db.activityModel.findByIdAndUpdate(activity.parent_activity_id,
-                            {hasChildren : true},
+                            {hasChildren: true},
                             function (e, model) {
                                 console.log(e);
                             })
@@ -572,44 +671,46 @@ router.get('/age/', function (req, res) {
                     })
                 })
         });
-/*
-    db.messageModel.where('recipient_id').equals('54ad293c8f94e3d8344883b9')
-        .where('isRead').equals(false)
-        .where('isBlocked').equals(false)
-        .count(function (err, count) {
-            console.log (count);
-        });
-*/
 
-/*
-    db.userModel.find({fb_uid:'10152456757213601'})
-        .where('first_name').ne('Oren')
-        .exec(function (e, users) {
-            db.userModel.findByIdAndRemove(users[0].id, function (e,c) {
 
-            console.log(e);
-            })
-        });
-*/
-/*    db.oldUserModel.find()
-        .select('fb_uid user')
-        .exec(function (e, users) {
-           users.forEach(function (user) {
-               db.userModel.findOneAndUpdate(
-                   {user:user.user},
-                   {fb_uid:user.fb_uid},
-                   function (e,c,raw) {
-                       console.log(e);
-                   }
+    /*
+     db.messageModel.where('recipient_id').equals('54ad293c8f94e3d8344883b9')
+     .where('isRead').equals(false)
+     .where('isBlocked').equals(false)
+     .count(function (err, count) {
+     console.log (count);
+     });
+     */
 
-               )
-           })
-        });*/
-/*
-    db.userModel.update({}, {blockedUsers: []}, {multi: true}, function (e, c, raw) {
-        console.log(c);
-    });
-*/
+    /*
+     db.userModel.find({fb_uid:'10152456757213601'})
+     .where('first_name').ne('Oren')
+     .exec(function (e, users) {
+     db.userModel.findByIdAndRemove(users[0].id, function (e,c) {
+
+     console.log(e);
+     })
+     });
+     */
+    /*    db.oldUserModel.find()
+     .select('fb_uid user')
+     .exec(function (e, users) {
+     users.forEach(function (user) {
+     db.userModel.findOneAndUpdate(
+     {user:user.user},
+     {fb_uid:user.fb_uid},
+     function (e,c,raw) {
+     console.log(e);
+     }
+
+     )
+     })
+     });*/
+    /*
+     db.userModel.update({}, {blockedUsers: []}, {multi: true}, function (e, c, raw) {
+     console.log(c);
+     });
+     */
     /*
      db.userModel.update({}, {newVersion: false}, {multi: true}, function (e, c, raw) {
      console.log(c);

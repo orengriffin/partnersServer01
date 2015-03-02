@@ -96,9 +96,12 @@ function sendNotification(recipient, sender, message, relation, callback, badge)
 var func = {
     db  : null,
     pub : null,
+    sendMail : null,
+
     init: function () {
         this.db = require('./mymongoose');
         this.pub = require('./pub');
+        this.sendMail = require('./sendMail');
     },
 
     tellPartnersNewDistance: function (id, lat, lon) {
@@ -255,8 +258,7 @@ var func = {
         theToken : null,
         isLoading: false,
         get      : function (callback) {
-            var tokenToReturn = this.theToken;
-            return tokenToReturn;
+            return  this.theToken;
         },
         set      : function (tokenParam) {
             this.theToken = tokenParam;
@@ -284,26 +286,33 @@ var func = {
         var andQuery = [{$or: genderQuery},
             {$and: ageQuery}
         ];
-        if (ageQuery[0].age['$gt'] == 17 && ageQuery[1].age['$lt'] == 89) {
-            genderQuery.push({age: null});
+
+        if (ageQuery[0].age['$gt'] == 17 && ageQuery[1].age['$lt'] == 89)
             andQuery.pop();
 
-        }
         return andQuery;
     },
 
     returnSearchedMember: function (me, user) {
+
+        var isMembers = me.partners.some(function (partner) {
+            if (!!partner.partner_id.equals(user._id)) {
+                //idToDell = partner._id;
+                return true;
+            }
+            else return false
+        });
         return {
             user            : user.user,
             image           : user.image,
             first_name      : user.first_name,
             last_name       : user.last_name,
-            //last_seen  : (user.isOnline) ? " " : utils.timeCalc(user.last_visit, 0),
+            last_seen  : (user.isOnline) ? " " : this.timeCalc(user.last_visit, 0),
             location        : this.distanceCalc(
                 {lon: me.location[0], lat: me.location[1]},
                 {longitude: user.location[0], latitude: user.location[1]}),// / 1000,
             is_online       : (user.isOnline) ? 1 : 0,
-            //is_partners: isMembers ? 1 : 0,
+            is_partners: isMembers ? 1 : 0,
             age             : (!!user.birthday) ? this.ageCalc(user.birthday) : '',
             isBlocked       : me.blockedUsers.indexOf(user.id) != -1,
             sharedActivities: this.getSharedActivities(me, user)
@@ -320,8 +329,6 @@ var func = {
                     return true;
                 }
             });
-            //if (this.length == index +1)
-            //    return
         }, me.activities);
         return (activitiesToReturn[0]) ? activitiesToReturn : ''
     },
@@ -342,7 +349,7 @@ var func = {
                 },
                 recipient : function (callback) {
                     self.db.userModel.findOne({user: paramsReceived.user_id})
-                        .select('platform newVersion isOnline udid _id first_name user partners blockedUsers newVersion')
+                        //.select('platform newVersion isOnline udid _id first_name user partners blockedUsers newVersion last_visit email email_notification')
                         .exec(function (e, recipient) {
                             callback(e, recipient);
                         });
@@ -425,6 +432,7 @@ var func = {
                     }
                 }, function (e, secondResults) {
                     if (secondResults.isSaved.isSaved) {
+                        self.sendMail.send(r.sender._doc, r.recipient._doc, paramsReceived.message);
                         if (r.recipient.newVersion) {
 
                             if (r.recipient.platform.toLocaleLowerCase() == 'android') {

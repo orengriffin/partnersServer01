@@ -5,7 +5,9 @@ var mongoose = require('mongoose');
 var bodyParser = require("body-parser");
 var db = require('./mymongoose');
 var utils = require('./utils');
-
+var fs = require ('fs');
+var pub = require ('./pub');
+var sendMail = require ('./sendMail');
 
 
 // router
@@ -21,14 +23,30 @@ var prelogin = require('./router/prelogin');
 
 
 var uristring =
-    process.env.MONGOLAB_URI ||
-    process.env.MONGOHQ_URL ||
-    'mongodb://heroku_app31337616:obtp59dcp2qqaiushniu6ea4cu@ds049130.mongolab.com:49130/heroku_app31337616';
+    process.env.MONGOLAB_URI;
 
 app.use(bodyParser.urlencoded({extended: false}));
 
 
 var pagesLoaded = 0;
+
+fs.readFile (__dirname + '/credentials.json', function (err, data) {
+    var credentials = JSON.parse(data.toString());
+    if (!err)
+    {
+        uristring = credentials.mongo;
+        pub.setKeys(credentials.pub.publish_key , credentials.pub.subscribe_key);
+        sendMail.setKeys(credentials.sendgrid.password, credentials.sendgrid.username);
+    }
+    mongoose.connect(uristring, function (err, res) {
+        if (err) {
+            console.log('ERROR connecting to: ' + uristring + '. ' + err);
+        } else {
+            console.log('Succeeded connected to: ' + uristring);
+        }
+    });
+    sendMail.init();
+});
 
 app.use('/admin', function (req, res, next) {
     var paramsReceived = req.query;
@@ -77,13 +95,7 @@ app.all('*', function (req, res, next) {
 });
 
 
-mongoose.connect(uristring, function (err, res) {
-    if (err) {
-        console.log('ERROR connecting to: ' + uristring + '. ' + err);
-    } else {
-        console.log('Succeeded connected to: ' + uristring);
-    }
-});
+
 var mongodb = mongoose.connection;
 mongodb.on('error', console.error.bind(console, 'connection error:'));
 mongodb.once('open', function () {

@@ -168,16 +168,6 @@ router.get('/getPartners/', function (req, res) {
                     if (!!users[0])
                         users.forEach(function (user, index) {
 /*
-                            var idToDell = null;
-                            var isMembers = this.me.partners.some(function (partner) {
-                                if (!!partner.partner_id.equals(user._id)) {
-                                    idToDell = partner._id;
-                                    return true;
-                                }
-                                else return false
-                            });
-                            if (idToDell)
-                                this.me.partners.id(idToDell).remove();
                             membersToReturn.push({
                                 user       : user.user,
                                 image      : user.image,
@@ -250,6 +240,7 @@ router.get('/getPartners/', function (req, res) {
                         activity.parent_activity_id = activity._id;
                         activity.save();
                         r.me.save();
+                        var newMembersObj = (r.me.newVersion) ?  {searched:paramsReceived ,members:[]} : [];
                         res.send(JSON.stringify({
                             code   : 0,
                             error  : "",
@@ -259,7 +250,7 @@ router.get('/getPartners/', function (req, res) {
                                     activity   : paramsReceived.activity,
                                     activity_id: activity._id
                                 },
-                                member: []
+                                member: newMembersObj
                             }
                         }));
             });
