@@ -17,7 +17,7 @@ var pubFunctions = {
             ssl          : true,
             uuid         : 'partnersServer',
             publish_key  : this.publishKey,
-            subscribe_key: this.subscribeKey,
+            subscribe_key: this.subscribeKey
         });
 
         utils.init();
@@ -59,12 +59,13 @@ var pubFunctions = {
         });
 
         db.userModel.find({isOnline: true})
+            .select('id first_name last_name channel newVersion')
             .where('newVersion').equals(true)
-            .select('id first_name last_name')
+            //.where('channel').ne('')
             .exec(function (e, users) {
                 users.forEach(function (user) {
                     self.pub.here_now({
-                        channel : user.id,
+                        channel : user.channel,
                         callback: function (m) {
                             console.log('callback was called');
                             if ((m.occupancy == 1 && m.uuids[0] == 'partnersServer' ) || !m.occupancy) {
@@ -75,7 +76,7 @@ var pubFunctions = {
                                 utils.tellPartnersOnlineStatus(user.id, false);
                             }
                             else
-                                self.subscribe(user.id);
+                                self.subscribe(user.channel);
                         }
                     });
                 });
@@ -113,9 +114,10 @@ var pubFunctions = {
 
     userOnline: function (id, callback) {
         console.log('useronline');
-        var self = this;
-        //this.subscribe(id, callback);
+        //var self = this;
+        this.subscribe(id, callback);
 
+/*
         this.pub.here_now({
             channel : id,
             callback: function (m) {
@@ -130,6 +132,7 @@ var pubFunctions = {
                     self.subscribe(id, callback);
             }
         });
+*/
     },
 
     unsubscribe: function (channel, pub, myCallback) {
@@ -162,6 +165,7 @@ var pubFunctions = {
         var self = this;
         var myPub = this.pub;
         var db = this.db;
+        channel += '-' + Date.now();
         myPub.subscribe({
             restore  : false,
             channel  : channel,
@@ -173,7 +177,7 @@ var pubFunctions = {
                 console.log('server received message. channel : ' + channel);
                 console.log(m);
             },
-            presence : function (m) {
+            presence : function (m,a,b,c) {
                 console.log('presence said: ' + m.action + ' ' + m.uuid);
                 var fbId = m.uuid.split('-')[1];
                 var id = m.uuid.split('-')[0];
@@ -187,26 +191,48 @@ var pubFunctions = {
                         }
                     });
                     utils.tellPartnersOnlineStatus(id, isOnline);
-                    db.userModel.findByIdAndUpdate(id,
-                        {isOnline: isOnline},
-                        function (e, c, raw) {
+
+/*
+                    db.userModel.findById(id)
+                        .exec(function (e, user) {
+                            if (user.channel != id + '-' + fbId)
+                                self.unsubscribe(id + '-' + fbId, self.pub);
+                            else if (!isOnline) {
+                                user.isOnline = false;
+                                self.unsubscribe(user.channel, self.pub);
+                                user.channel = '';
+                            }
+                            if (isOnline)
+                                user.isOnline = true;
+                            user.save();
+
+                            utils.tellPartnersOnlineStatus(id, isOnline);
                             var onlineSTR = (isOnline) ? 'online' : 'offline';
-                            if (!isOnline)
-                                self.unsubscribe(id, self.pub);
                             console.log('updated ' + m.uuid.split('-')[2] + ' ' + m.uuid.split('-')[3] + ' to ' + onlineSTR);
-                            //self.unsubscribe(id);
-                        })
-                }
+
+                        } );
+*/
+
+                            db.userModel.findByIdAndUpdate(id,
+                                {isOnline: isOnline},
+                                    function (e, c, raw) {
+                                        var onlineSTR = (isOnline) ? 'online' : 'offline';
+                                        if (!isOnline)
+                                            self.unsubscribe(channel, self.pub);
+                                        console.log('updated ' + m.uuid.split('-')[2] + ' ' + m.uuid.split('-')[3] + ' to ' + onlineSTR);
+                                        //self.unsubscribe(id);
+                                    })
+                        }
 
             },
             reconnect: function (m) {
                 console.log('reconnected');
-                if (userCallback) userCallback();
+                if (userCallback) userCallback(channel);
 
             },
             connect  : function (m) {
                 console.log('subcribed');
-                if (userCallback) userCallback();
+                if (userCallback) userCallback(channel);
             }
         });
     }

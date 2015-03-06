@@ -14,9 +14,12 @@ router.post('/online/', function (req, res) {
     console.log('online router');
     var id = req.body.id;
     if (id) {
-        pub.userOnline(id, function (isConnected) {
-            res.send('update  : ' + isConnected)
-
+        pub.userOnline(id, function (channel) {
+            db.userModel.findByIdAndUpdate(id,{channel:channel},
+                function (c,m) {
+                    console.log();
+                });
+            res.send(channel)
         });
     }
 });

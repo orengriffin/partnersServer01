@@ -50,6 +50,12 @@ function oldTime(date) {
 }
 
 function sendNotification(recipient, sender, message, relation, callback, badge) {
+    if (!recipient.udid)
+    {
+        console.log ('Notification not sent (no uuid). user :' + recipient.user)
+        return;
+    }
+
     if (recipient.platform.toLowerCase() == 'android') {
         console.log('sending ' + message + ' to ' + recipient.first_name + ' ' + recipient.udid);
         gcm.Sender('AIzaSyAnpn0Y61bm5PuFzHbCojUr5-htTgzZfCE').send(new gcm.Message({
@@ -117,7 +123,7 @@ var func = {
             },
             partners: function (callback) {
                 self.db.userModel.find()
-                    .select('partners newVersion isOnline fb_uid first_name')
+                    .select('partners newVersion isOnline fb_uid first_name channel')
                     .where('isOnline').equals(true)
                     .where('partners').ne([])
                     .where('partners.partner_id').equals(id)
@@ -127,7 +133,7 @@ var func = {
             }
         }, function (e, r) {
             r.partners.forEach(function (partner) {
-                localPub.sendMsg(partner.id, {
+                localPub.sendMsg(partner.channel, {
                     distance: self.distanceCalc({
                             lat: Number(lat),
                             lon: Number(lon)
@@ -160,7 +166,7 @@ var func = {
                 self.db.userModel.find()
                     .where('isOnline').equals(true)
                     .where('partners').ne([])
-                    .select('partners newVersion fb_uid first_name isOnline')
+                    .select('partners newVersion fb_uid first_name isOnline channel')
                     .where('partners.partner_id').equals(id)
                     .where('newVersion').equals(true)
                     .exec(function (e, users) {
@@ -170,7 +176,7 @@ var func = {
         }, function (e, r) {
             r.partners.forEach(function (partner) {
                 //if (partner.isOnline && partner.newVersion)
-                localPub.sendMsg(partner.id, {
+                localPub.sendMsg(partner.channel, {
                     online: isOnline,
                     fbid  : this.fb_uid,
                     user  : this.user
@@ -207,6 +213,8 @@ var func = {
 
 
         var R = 6371; // km
+        if (typeof lat2 == 'undefined')
+            console.log('error');
         var φ1 = lat1.toRad();
         var φ2 = lat2.toRad();
         var Δφ = (lat2 - lat1).toRad();
@@ -236,11 +244,11 @@ var func = {
 
         then /= 1000;
         var timeObj = [
-            {n: 60, s: 'Minutes'},
-            {n: 60, s: 'Hours'},
-            {n: 24, s: 'Days'},
-            {n: 31, s: 'Months'},
-            {n: 12, s: 'Years'},
+            {n: 60, s: 'minutes'},
+            {n: 60, s: 'hours'},
+            {n: 24, s: 'days'},
+            {n: 31, s: 'months'},
+            {n: 12, s: 'years'},
             {n: 100, s: 'Milenums'}
         ];
         for (var i = 0; true; i++) {
@@ -362,6 +370,7 @@ var func = {
                         });
 
                 }
+
             }, function (e, r) {
 
                 var isBLocked = (r.recipient.blockedUsers) ? (r.recipient.blockedUsers.indexOf(r.sender._id) != -1) : false;
@@ -404,7 +413,6 @@ var func = {
                         console.log(e);
                     });
 
-
                 }, ['recipient', 'sender']);
 
                 async.parallel({
@@ -421,7 +429,9 @@ var func = {
                             });
                     },
                     isRecipeientOnline: function (parallelCallback) {
-                        self.pub.hereNow(r.recipient._id, function (isOnline) {
+                        if (r.recipient.newVersion)
+
+                        self.pub.hereNow(r.recipient.channel, function (isOnline) {
                             if (r.recipient.isOnline != isOnline) {
                                 console.log('good thing i used here now');
                                 self.db.userModel.update({_id: r.recipient._id}, {isOnline: isOnline});
@@ -429,6 +439,9 @@ var func = {
                             else console.log('here now shouldnt have been used');
                             parallelCallback(null, isOnline);
                         });
+                        else
+                            parallelCallback(null, r.recipient.isOnline)
+
                     }
                 }, function (e, secondResults) {
                     if (secondResults.isSaved.isSaved) {
@@ -438,7 +451,7 @@ var func = {
                             if (r.recipient.platform.toLocaleLowerCase() == 'android') {
                                 if (secondResults.isRecipeientOnline) {
                                     console.log('sendPubNub');
-                                    self.pub.sendMsg(r.recipient.id, msgObj(paramsReceived.message, r.sender.user, paramsReceived.relation, r.sender, true), function (e) {
+                                    self.pub.sendMsg(r.recipient.channel, msgObj(paramsReceived.message, r.sender.user, paramsReceived.relation, r.sender, true), function (e) {
                                         respond(res, e, "success", true);
 
                                     });
@@ -457,7 +470,7 @@ var func = {
                             else // if IOS
                             {
                                 console.log('trying sendPubNub');
-                                self.pub.sendMsg(r.recipient.id, msgObj(paramsReceived.message, r.sender.user, paramsReceived.relation, r.sender, true), function (e) {
+                                self.pub.sendMsg(r.recipient.channel, msgObj(paramsReceived.message, r.sender.user, paramsReceived.relation, r.sender, true), function (e) {
                                     setTimeout(function () {
                                         async.parallel({
                                                 badge  : function (callback) {

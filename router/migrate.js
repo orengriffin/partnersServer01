@@ -805,6 +805,28 @@ router.get('/userActivities/3/', function (req, res) {
     }
 );
 
+/*
+router.get('/deleteDuplicated', function (req, res) {
+   db.userModel.where('partners').ne([])
+       .exec(function (e, users) {
+           users.forEach(function (user) {
+               var obj = {};
+               var arr[];
+               for (var i = 0; i < user.partners.length; i++) {
+                    arr[user.partners]
+               }
+               for (var i = 0; i < user.partners.length; i++) {
+                   for (var j = i +1; j < user.partners.length - 1; j++) {
+                       var obj1 = utils[j];
+
+                   }
+                   var obj = user.partners[i];
+               }
+           })
+       })
+});
+*/
+
 
 /*router.get('/userlist', function (req, res) {
 

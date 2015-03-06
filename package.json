@@ -11,7 +11,8 @@
     "apn": "*",
     "rand-token": "*",
     "fs": "*",
-    "sendgrid" : "*"
+    "sendgrid" : "*",
+    "swig-email-templates": "*"
   },
   "subdomain": "undefined-whispering-cove-2135",
   "scripts": {

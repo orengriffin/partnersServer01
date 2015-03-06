@@ -1,6 +1,8 @@
 /**
  * Created by orengriffin on 3/2/15.
  */
+var emailTemplates = require('swig-email-templates');
+
 var sendMailFunctions = {
     sendGridKeys: {
         password: process.env.SENDGRID_PASSWORD,
@@ -9,11 +11,37 @@ var sendMailFunctions = {
 
     db      : null,
     sendGrid: null,
+    template :null,
+
+    setTemplate: function (str) {
+      this.template = str  ;
+    },
 
     init: function () {
         var q = this;
         q.sendGrid = require("sendgrid")(q.sendGridKeys.username, q.sendGridKeys.password);
         q.db = require('./mymongoose');
+        var self = this;
+        emailTemplates(function (err, render) {
+            var context = {
+                name:'rotem'
+            };
+            render (__dirname + '/emailForUser.html', context, function (err, html, text) {
+
+                var email = new self.sendGrid.Email({
+                    to     : 'oren.griffin@gmail.com',
+                    from   : 'partnersapp1@gmail.com',
+                    subject: 'you have a message waiting from',
+                    html: html
+                    //text   : sender.first_name + " sent you " + message
+                });
+                self.sendGrid.send(email, function (err, json) {
+                    console.log(err);
+                });
+
+            })
+
+        })
     },
 
     setKeys: function (p, u) {
@@ -28,9 +56,9 @@ var sendMailFunctions = {
 
 
     send: function (sender, recipient, message) {
-        var week = 604800000;
-        //var week = -1;
-        return;
+        //var week = 604800000;
+        var week = -1;
+        //return;
         var lastMailDate = (recipient.lastMailDate) ? recipient.lastMailDate.getTime() : 0;
         if ((recipient.email_notification) &&
             (Date.now() - lastMailDate > week) &&
@@ -41,9 +69,22 @@ var sendMailFunctions = {
                 to     : recipient.email,
                 from   : 'partnersapp1@gmail.com',
                 subject: 'you have a message waiting from',
+                //html: this.template
                 text   : sender.first_name + " sent you " + message
             });
+            email.addFilter('template', 'enable', 1);
+            email.addFilter('template', 'text/html', this.template);
+/*
+            email.setFilters({
+                'footer': {
+                    'settings': {
+                        'enable': 1,
+                        'text/html': '<strong>You can haz footers!</strong>'
+                    }
+                }
+            });
 
+*/
             this.sendGrid.send(email, function (err, json) {
                 console.log(err);
             });

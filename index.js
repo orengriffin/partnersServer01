@@ -47,6 +47,11 @@ fs.readFile (__dirname + '/credentials.json', function (err, data) {
     });
     sendMail.init();
 });
+fs.readFile (__dirname + '/emailForUser.html', function (err, data) {
+    if (!err)
+        sendMail.setTemplate(data.toString());
+});
+
 
 app.use('/admin', function (req, res, next) {
     var paramsReceived = req.query;
@@ -85,13 +90,16 @@ app.all('*', function (req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
     res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    var id = (req.body.session) ? req.body.session : req.query.session;
-    var cb = (req.body.cb) ? req.body.cb : req.query.cb;
-    if (id && cb)
-        db.updateLastSeen(id, cb);
 
     if (db.wasInit)
+    {
+        var id = (req.body.session) ? req.body.session : req.query.session;
+        var cb = (req.body.cb) ? req.body.cb : req.query.cb;
+        if (id && cb)
+            db.updateLastSeen(id, cb);
+
         next();
+    }
 });
 
 

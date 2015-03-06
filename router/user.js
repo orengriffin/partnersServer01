@@ -27,7 +27,6 @@ router.post('/updateLocation/', function (req, res) {
                 respond(res, e, 'success', true);
                 console.log('location updated to ');
             }
-            //res.send('{"message":"success"}');
         })
 });
 
@@ -75,6 +74,8 @@ router.post('/removePartners/', function (req, res) {
             respond(res, e, 'success', true);
         });
 });
+
+
 router.post('/setPartners/', function (req, res) {
     var paramsReceived = req.body;
     var time = new Date(Number(req.query.cb));
@@ -191,6 +192,10 @@ router.get('/getPartnersList/', function (req, res) {
             }, user.partners);
         });
 });
+
+function clone(a) {
+    return JSON.parse(JSON.stringify(a))
+}
 router.get('/newGetPartnersList/', function (req, res) {
     console.log('new getting partners');
 
@@ -199,32 +204,31 @@ router.get('/newGetPartnersList/', function (req, res) {
 
     var convertUser = function (partner, me, i) {   // backwards compatibilty
 
-        var locationArray = partner.location;
-        delete partner.location;
-
-        if (me.partners[i].activity_relation)
-            partner.relation = me.partners[i].activity_relation.activity;
-        //partner.two_way_trust = 1;
-        partner.is_online = (partner.isOnline) ? 1 : 0;
-        partner.last_seen = (partner.isOnline) ? ' ' : utils.timeCalc(partner.last_visit, 0);
-        partner.location = (me.location[0]) ? utils.distanceCalc(
-            {lon: me.location[0], lat: me.location[1]},
-            {longitude: locationArray[0], latitude: locationArray[1]}) : "";
-        console.log(partner.location);
-
-        delete partner._id;
-        delete partner.activities;
-        delete partner.partners;
-        delete partner.isOnline;
-        delete partner.relations;
-        delete partner.__v;
-
-        return partner;
+        /*
+         if (me.partners[i].activity_relation)
+         partner.relation = me.partners[i].activity_relation.activity;
+         //partner.two_way_trust = 1;
+         partner.is_online = (partner.isOnline) ? 1 : 0;
+         partner.last_seen = (partner.isOnline) ? ' ' : utils.timeCalc(partner.last_visit, 0);
+         partner.location = (me.location[0] && locationArray[0] ) ? utils.distanceCalc(
+         {lon: me.location[0], lat: me.location[1]},
+         {longitude: locationArray[0], latitude: locationArray[1]}) : '';
+         console.log(partner.location);
+         */
+        return {
+            user     : partner.user,
+            relation : (me.partners[i].activity_relation) ? me.partners[i].activity_relation.activity : '',
+            is_online: (partner.isOnline) ? 1 : 0,
+            last_seen: (partner.isOnline) ? ' ' : utils.timeCalc(partner.last_visit, 0),
+            location : (me.location[0] && partner.location[0] ) ? utils.distanceCalc(
+                {lon: me.location[0], lat: me.location[1]},
+                {longitude: partner.location[0], latitude: partner.location[1]}) : ''
+        };
     };
 
     db.userModel.findById(paramsReceived.session)
         .select('partners location')
-        .populate('partners.partner_id')
+        .populate('partners.partner_id', 'user relation last_visit location is_online first_name')
         .populate('partners.activity_relation')
         .exec(function (e, user) {
             if (!user.partners[0])
@@ -610,25 +614,27 @@ router.post('/newEnterApp/', function (req, res) {
             var partnersArray = [];
             user.partners.forEach(function (partner, index) {
                 partnersArray.push(partner.partner_num);
-                if (index + 1 == user.partners.length)
-                    res.send(
-                        {
-                            code   : 0,
-                            message: {
-
-                                login_success: true,
-                                notifications: {
-                                    email      : (user.email_notification) ? '1' : '0',
-                                    new_partner: (user.notify_partner) ? '1' : '0'
-                                },
-                                uid          : user.user,
-                                session      : user._id + '',
-                                partners     : partnersArray
-                            }
-                        });
+                //if (index + 1 == user.partners.length)
 
             }, user);
+            res.send(
+                {
+                    code   : 0,
+                    message: {
 
+                        login_success: true,
+                        notifications: {
+                            email      : (user.email_notification) ? '1' : '0',
+                            new_partner: (user.notify_partner) ? '1' : '0'
+                        },
+                        uid          : user.user,
+                        session      : user._id + '',
+                        partners     : partnersArray,
+                        channel: user.channel,
+                        email : user.email
+
+                    }
+                });
         };
         //var channel ='-' + Date.now().getTime();
         db.userModel.findOne({fb_uid: paramsReceived.fb_uid})
@@ -637,14 +643,16 @@ router.post('/newEnterApp/', function (req, res) {
                     async.parallel({
                         pubSub    : function (callback) {
                             if (user.newVersion || paramsReceived.newVersion)
-                                pub.userOnline(user.id, function () {
-                                    callback(null, true);
+                                pub.userOnline(user.id, function (channel) {
+                                    callback(null, {channel: channel});
                                 });
-/*
-                            pub.subscribe(user.id+channel, function () {
-                                callback(null,true);
-                            })
-*/
+                            else
+                                callback(null, null);
+                            /*
+                             pub.subscribe(user.id+channel, function () {
+                             callback(null,true);
+                             })
+                             */
                         },
                         updateUser: function (callback) {
                             utils.myForEach(paramsReceived, function (prop, val, next) {
@@ -657,7 +665,10 @@ router.post('/newEnterApp/', function (req, res) {
                                 callback(null, true);
                             });
                         }
+
                     }, function (e, res) {
+                        if (res.pubSub)
+                            user.channel = res.pubSub.channel;
                         user.save(function (e, savedUser) {
                             //savedUser.channel = channel;
                             console.log(user.first_name + ' ' + user.last_name + ' Has logged in and updated');
@@ -677,8 +688,21 @@ router.post('/newEnterApp/', function (req, res) {
                                     db.userModel.findOne({user: paramsReceived.user})
                                         .select('_id first_name last_name email_notification notify_partner user')
                                         .exec(function (e, newUser) {
-                                            console.log(newUser.first_name + ' ' + newUser.last_name + ' Added to DB');
-                                            respond(newUser);
+                                            var finish = function (userToRespond) {
+
+                                                console.log(userToRespond.first_name + ' ' + userToRespond.last_name + ' Added to DB');
+                                                respond(userToRespond);
+
+                                                if (newUser.newVersion)
+                                                    pub.userOnline(newUser.id, function (channel) {
+                                                        newUser.channel = channel;
+                                                        newUser.save(function (e, userWithChannel) {
+                                                            finish(userWithChannel);
+                                                        })
+                                                    });
+                                                else finish(newUser);
+
+                                            }
                                         });
                                 });
 
@@ -830,11 +854,11 @@ router.post('/getNearPartners', function (req, res) {
                 .and(utils.returnAgeGenderQuery(paramsReceived))
                 .populate('activities')
                 .where('location').near({
-                    center: me.location,
-                    maxDistance :parseFloat(100/6371), // maxDistance -  100 Km
-                    spherical: true
+                    center     : me.location,
+                    maxDistance: parseFloat(100 / 6371), // maxDistance -  100 Km
+                    spherical  : true
                 })
-                .skip((searchIteration-1) * 30)
+                .skip((searchIteration - 1) * 30)
                 .limit(31)
                 .exec(function (e, users) {
                     users.forEach(function (user, index) {
@@ -845,7 +869,7 @@ router.post('/getNearPartners', function (req, res) {
                             membersToReturn.push(utils.returnSearchedMember(me, user));
                     });
                     //console.log(membersToReturn);
-                    res.send({searched:paramsReceived ,members:membersToReturn});
+                    res.send({searched: paramsReceived, members: membersToReturn});
                 })
         })
 });
