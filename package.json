@@ -3,7 +3,7 @@
   "version": "0.0.1-5",
   "dependencies": {
     "express": "^4.0.0",
-    "mongoose": "*",
+    "mongoose": "3.8",
     "body-parser": "^1.8.1",
     "pubnub": "*",
     "async": "*",

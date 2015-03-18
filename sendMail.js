@@ -1,7 +1,10 @@
 /**
  * Created by orengriffin on 3/2/15.
  */
-var emailTemplates = require('swig-email-templates');
+//var emailTemplates = require('swig-email-templates');
+//var path = require('path');
+//var juice = require('juice');
+var swig = require("swig");
 
 var sendMailFunctions = {
     sendGridKeys: {
@@ -11,37 +14,21 @@ var sendMailFunctions = {
 
     db      : null,
     sendGrid: null,
-    template :null,
+    template: null,
+    css     : null,
 
     setTemplate: function (str) {
-      this.template = str  ;
+        this.template = str;
+    },
+    setCss     : function (str) {
+        this.css = str;
     },
 
     init: function () {
         var q = this;
         q.sendGrid = require("sendgrid")(q.sendGridKeys.username, q.sendGridKeys.password);
         q.db = require('./mymongoose');
-        var self = this;
-        emailTemplates(function (err, render) {
-            var context = {
-                name:'rotem'
-            };
-            render (__dirname + '/emailForUser.html', context, function (err, html, text) {
-
-                var email = new self.sendGrid.Email({
-                    to     : 'oren.griffin@gmail.com',
-                    from   : 'partnersapp1@gmail.com',
-                    subject: 'you have a message waiting from',
-                    html: html
-                    //text   : sender.first_name + " sent you " + message
-                });
-                self.sendGrid.send(email, function (err, json) {
-                    console.log(err);
-                });
-
-            })
-
-        })
+        q.template = swig.compileFile('boughtTemplate.html');
     },
 
     setKeys: function (p, u) {
@@ -55,10 +42,11 @@ var sendMailFunctions = {
     },
 
 
-    send: function (sender, recipient, message) {
+    send: function (sender, recipient, message, relation) {
         //var week = 604800000;
         var week = -1;
-        //return;
+        var self = this;
+        return;
         var lastMailDate = (recipient.lastMailDate) ? recipient.lastMailDate.getTime() : 0;
         if ((recipient.email_notification) &&
             (Date.now() - lastMailDate > week) &&
@@ -66,25 +54,19 @@ var sendMailFunctions = {
             (this.validEmailAddress(recipient.email))) {
 
             var email = new this.sendGrid.Email({
-                to     : recipient.email,
-                from   : 'partnersapp1@gmail.com',
-                subject: 'you have a message waiting from',
-                //html: this.template
-                text   : sender.first_name + " sent you " + message
+                to      : recipient.email,
+                fromname: 'Partners App,',
+                from    : 'info@partners-app.com',
+                subject : 'You have a message waiting from ' + sender.first_name,
+                html    : this.template({
+                    name       : sender.first_name,
+                    date       : dateStr(),
+                    image      : sender.image,
+                    message    : message,
+                    unsubscribe: 'http://84.109.234.163:3010/user/unsubscribe?type=viaEmail&session=' + recipient._id + '&status=0&fromMail=true',
+                    relation   : relation
+                })
             });
-            email.addFilter('template', 'enable', 1);
-            email.addFilter('template', 'text/html', this.template);
-/*
-            email.setFilters({
-                'footer': {
-                    'settings': {
-                        'enable': 1,
-                        'text/html': '<strong>You can haz footers!</strong>'
-                    }
-                }
-            });
-
-*/
             this.sendGrid.send(email, function (err, json) {
                 console.log(err);
             });
@@ -98,7 +80,13 @@ var sendMailFunctions = {
 
         console.log(recipient.last_visit.getTime());
     }
-
-
 };
+
+function dateStr() {
+    var d = new Date();
+    var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "June",
+        "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
+    return d.getDate() + ' ' + monthNames[d.getMonth()] + ', ' + (1900 + d.getYear());
+}
+
 module.exports = sendMailFunctions;

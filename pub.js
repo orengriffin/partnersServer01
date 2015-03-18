@@ -11,7 +11,7 @@ var pubFunctions = {
     publishKey  : process.env.PUBNUB_PUBLISH_KEY,
     subscribeKey: process.env.PUBNUB_SUBSCRIBE_KEY,
 
-    init           : function () {
+    init: function () {
         this.db = require('./mymongoose');
         this.pub = require("pubnub")({
             ssl          : true,
@@ -24,7 +24,7 @@ var pubFunctions = {
         this.subscribeToMain();
     },
 
-    setKeys : function (p, s) {
+    setKeys        : function (p, s) {
         this.publishKey = p;
         this.subscribeKey = s;
     },
@@ -117,22 +117,22 @@ var pubFunctions = {
         //var self = this;
         this.subscribe(id, callback);
 
-/*
-        this.pub.here_now({
-            channel : id,
-            callback: function (m) {
-                if (m.uuids[1] == 'partnersServer' || m.uuids[0] == 'partnersServer') {
-                    //self.unsubscribe(id, self.pub, function () {
-                    //    self.subscribe(id, callback);
-                    //});
-                    callback();
+        /*
+         this.pub.here_now({
+         channel : id,
+         callback: function (m) {
+         if (m.uuids[1] == 'partnersServer' || m.uuids[0] == 'partnersServer') {
+         //self.unsubscribe(id, self.pub, function () {
+         //    self.subscribe(id, callback);
+         //});
+         callback();
 
-                }
-                else
-                    self.subscribe(id, callback);
-            }
-        });
-*/
+         }
+         else
+         self.subscribe(id, callback);
+         }
+         });
+         */
     },
 
     unsubscribe: function (channel, pub, myCallback) {
@@ -177,12 +177,14 @@ var pubFunctions = {
                 console.log('server received message. channel : ' + channel);
                 console.log(m);
             },
-            presence : function (m,a,b,c) {
+            presence : function (m, a, b, c) {
                 console.log('presence said: ' + m.action + ' ' + m.uuid);
                 var fbId = m.uuid.split('-')[1];
                 var id = m.uuid.split('-')[0];
                 if (!isNaN(fbId)) {
                     var isOnline = (m.action == 'join');
+                    var onlineSTR = (isOnline) ? 'online' : 'offline';
+
                     myPub.here_now({
                         channel : 'partners-channel',
                         callback: function (hereNow) {
@@ -190,39 +192,21 @@ var pubFunctions = {
                                 self.sendMsg('partners-channel', m)
                         }
                     });
-                    utils.tellPartnersOnlineStatus(id, isOnline);
-
-/*
+                    if (!isOnline)
+                        self.unsubscribe(id + '-' + fbId, self.pub);
                     db.userModel.findById(id)
+                        .select('channel isOnline')
                         .exec(function (e, user) {
-                            if (user.channel != id + '-' + fbId)
-                                self.unsubscribe(id + '-' + fbId, self.pub);
-                            else if (!isOnline) {
-                                user.isOnline = false;
-                                self.unsubscribe(user.channel, self.pub);
-                                user.channel = '';
+                            if (user.channel == (id + '-' + fbId)) {
+                                utils.tellPartnersOnlineStatus(id, isOnline);
+                                user.isOnline = isOnline;
+                                user.save(function () {
+                                    console.log('updated ' + m.uuid.split('-')[2] + ' ' + m.uuid.split('-')[3] + ' to ' + onlineSTR);
+
+                                })
                             }
-                            if (isOnline)
-                                user.isOnline = true;
-                            user.save();
-
-                            utils.tellPartnersOnlineStatus(id, isOnline);
-                            var onlineSTR = (isOnline) ? 'online' : 'offline';
-                            console.log('updated ' + m.uuid.split('-')[2] + ' ' + m.uuid.split('-')[3] + ' to ' + onlineSTR);
-
-                        } );
-*/
-
-                            db.userModel.findByIdAndUpdate(id,
-                                {isOnline: isOnline},
-                                    function (e, c, raw) {
-                                        var onlineSTR = (isOnline) ? 'online' : 'offline';
-                                        if (!isOnline)
-                                            self.unsubscribe(channel, self.pub);
-                                        console.log('updated ' + m.uuid.split('-')[2] + ' ' + m.uuid.split('-')[3] + ' to ' + onlineSTR);
-                                        //self.unsubscribe(id);
-                                    })
-                        }
+                        });
+                }
 
             },
             reconnect: function (m) {

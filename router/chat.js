@@ -55,13 +55,9 @@ router.get('/getHistory', function (req, res) {
         }
     }, function (e, resutls) {
         var messages = (resutls.gotMessages) ? resutls.gotMessages : [];
-        if (resutls.me.newVersion && resutls.me.platform.toLocaleLowerCase() == 'ios')
             appendCompleted(null, messages, function () {
                 res.send(JSON.stringify({message: messages}));
             });
-        else
-            res.send(JSON.stringify({message: messages}));
-
     });
 
 });
@@ -73,25 +69,28 @@ function appendCompleted(req, res, callback) {
 
     console.log('appendCompleted');
     var count = 0;
+    var end = function () {
+            if (callback)
+                callback();
+            else
+                res.send('success');
+        };
 
+    if (!messages[0])
+        end();
     messages.forEach(function (id) {
         if (id.id)
             id = id.id;
-        var length = this.length;
+        var length = messages.length;
         db.messageModel.findByIdAndUpdate(id,
             {isRead: true}, function (e, c, r) {
                 if (!e)
                     count++;
-                if (count == length) {
-                    if (callback)
-                        callback();
-                    else
-                        res.send('success');
-
-                }
+                if (count == length)
+                    end();
             });
 
-    }, messages);
+    });
 
 }
 

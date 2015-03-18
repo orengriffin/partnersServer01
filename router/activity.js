@@ -199,7 +199,7 @@ router.get('/getPartners/', function (req, res) {
                                 }, true);
                             }
                             else
-                                membersToReturn.push(utils.returnSearchedMember(this.me,user));
+                                membersToReturn.push(utils.returnSearchedMember(this.me,user ,this.activity.activity));
                         }, {
                             len     : users.length,
                             activity: r.activity.parent_activity_id,

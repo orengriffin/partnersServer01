@@ -8,6 +8,7 @@ var utils = require('./utils');
 var fs = require ('fs');
 var pub = require ('./pub');
 var sendMail = require ('./sendMail');
+var async = require ('async');
 
 
 // router
@@ -42,15 +43,41 @@ fs.readFile (__dirname + '/credentials.json', function (err, data) {
         if (err) {
             console.log('ERROR connecting to: ' + uristring + '. ' + err);
         } else {
+            sendMail.init();
             console.log('Succeeded connected to: ' + uristring);
         }
     });
+});
+/*
+async.parallel({
+    html : function (callback) {
+            fs.readFile (__dirname + '/boughtTemplate.html', function (err, data) {
+                if (!err)
+                {
+                    sendMail.setTemplate(data.toString());
+                    callback();
+                }
+            });
+
+    }//,
+*/
+/*
+    css : function (callback) {
+            fs.readFile (__dirname + '/style.css', function (err, data) {
+                if (!err)
+                {
+                    sendMail.setCss(data.toString());
+                    callback();
+                }
+            });
+
+    }
+*//*
+
+}, function () {
     sendMail.init();
 });
-fs.readFile (__dirname + '/emailForUser.html', function (err, data) {
-    if (!err)
-        sendMail.setTemplate(data.toString());
-});
+*/
 
 
 app.use('/admin', function (req, res, next) {

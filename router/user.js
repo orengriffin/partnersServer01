@@ -228,7 +228,7 @@ router.get('/newGetPartnersList/', function (req, res) {
 
     db.userModel.findById(paramsReceived.session)
         .select('partners location')
-        .populate('partners.partner_id', 'user relation last_visit location is_online first_name')
+        .populate('partners.partner_id', 'user relation last_visit location isOnline first_name')
         .populate('partners.activity_relation')
         .exec(function (e, user) {
             if (!user.partners[0])
@@ -372,10 +372,38 @@ router.post('/notification/', function (req, res) {
             function (e, c, raw) {
                 if (!e && c) {
                     console.log('updated');
-                    respond(res, e, "success", true);
+                    if (paramsReceived.fromMail)
+                        res.send('Unsubscribed succesfully');
+                    else
+                        respond(res, e, "success", true);
                 }
                 else
                     respond(res, e, "error", true);
+
+            });
+    else res.statusCode(404);
+});
+
+router.get('/unsubscribe/', function (req, res) {
+    var paramsReceived = req.query;
+   if (paramsReceived.type == 'viaEmail')
+        db.userModel.findById(paramsReceived.session)
+            .select('email_notification')
+            .exec(function (e, user) {
+                if (user.email_notification)
+                {
+                    db.userModel.update({_id: paramsReceived.session},
+                        {email_notification: false},
+                        function (e, c, raw) {
+                            if (!e && c) {
+                                    res.send('Unsubscribed succesfully');
+                            }
+                            else
+                                    res.send('error');
+                        });
+                }
+                else
+                    res.send('allready Unsubscribed');
 
             });
     else res.statusCode(404);
@@ -876,3 +904,16 @@ router.post('/getNearPartners', function (req, res) {
 
 
 module.exports = router;
+
+
+/*
+$.ajax({
+    url : BASE_SERVER + '/user/notification',
+    data: {
+        type   : 'viaEmail',
+        session: userModel.get('session'),
+        status : (settings['notify_via_email'] ? 1 : 0)
+    },
+    type: "POST"
+});
+*/

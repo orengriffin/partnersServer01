@@ -52,7 +52,8 @@ function oldTime(date) {
 function sendNotification(recipient, sender, message, relation, callback, badge) {
     if (!recipient.udid)
     {
-        console.log ('Notification not sent (no uuid). user :' + recipient.user)
+        console.log ('Notification not sent (no uuid). user :' + recipient.user);
+        if (callback) callback()
         return;
     }
 
@@ -301,7 +302,7 @@ var func = {
         return andQuery;
     },
 
-    returnSearchedMember: function (me, user) {
+    returnSearchedMember: function (me, user, searchedActivity) {
 
         var isMembers = me.partners.some(function (partner) {
             if (!!partner.partner_id.equals(user._id)) {
@@ -323,17 +324,18 @@ var func = {
             is_partners: isMembers ? 1 : 0,
             age             : (!!user.birthday) ? this.ageCalc(user.birthday) : '',
             isBlocked       : me.blockedUsers.indexOf(user.id) != -1,
-            sharedActivities: this.getSharedActivities(me, user)
+            sharedActivities: this.getSharedActivities(me, user, searchedActivity)
         }
     },
 
-    getSharedActivities: function (me, user) {
+    getSharedActivities: function (me, user, searchedActivity) {
         var activitiesToReturn = [];
         var userActivities = user.activities;
         me.activities.forEach(function (activityId, index) {
             userActivities.some(function (userActivity) {
                 if (activityId.equals(userActivity.id)) {
-                    activitiesToReturn.push(userActivity.activity);
+                    if (searchedActivity != userActivity.activity )
+                        activitiesToReturn.push(userActivity.activity);
                     return true;
                 }
             });
@@ -364,7 +366,7 @@ var func = {
                 },
                 sender    : function (callback) {
                     self.db.userModel.findById(paramsReceived.session)
-                        .select('user _id relations first_name last_name partners')
+                        .select('user _id relations first_name last_name partners image')
                         .exec(function (e, sender) {
                             callback(e, sender);
                         });
@@ -391,7 +393,7 @@ var func = {
                     timeStamp   : Date.now(),
                     time        : (r.recipient.newVersion) ? oldTime(new Date(Number(rightDate))) : oldTime(new Date(Number(rightDate - 7200000)))
                 });
-
+                // adding each other to thiere partners array
                 ['recipient', 'sender'].forEach(function (user, index) {
                     var self = this;
                     var test = !(r[user].partners.some(function (partner) {
@@ -445,7 +447,7 @@ var func = {
                     }
                 }, function (e, secondResults) {
                     if (secondResults.isSaved.isSaved) {
-                        self.sendMail.send(r.sender._doc, r.recipient._doc, paramsReceived.message);
+                        self.sendMail.send(r.sender._doc, r.recipient._doc, paramsReceived.message, paramsReceived.relation);
                         if (r.recipient.newVersion) {
 
                             if (r.recipient.platform.toLocaleLowerCase() == 'android') {
