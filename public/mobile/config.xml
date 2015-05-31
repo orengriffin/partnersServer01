@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.partners-app.app.android" android-versionCode="1994" version="1.99.4" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name>Partners</name>
+    <description>
+        A sample Apache Cordova application that responds to the deviceready event.
+    </description>
+    <author email="idan.yalovich@gmail.com" href="http://cordova.io">
+        Idan Yalovich
+    </author>
+    <preference name="fullscreen" value="false" />
+    <content src="index.html" />
+    <access origin="*" />
+    <preference name="Orientation" value="portrait" />
+    <platform name="android">
+        <!-- you can use any density that exists in the Android project -->
+        <preference name="SplashScreen" value="screen" />
+        <!--<splash src="res/screen/screen_hdpi.png" density="land-hdpi"/>-->
+        <!--<splash src="res/screen/screen_ldpi.png" density="land-ldpi"/>-->
+        <!--<splash src="res/screen/screen_mdpi.png" density="land-mdpi"/>-->
+        <!--<splash src="res/screen/screen_xhdpi.png" density="land-xhdpi"/>-->
+	
+    </platform>
+
+</widget>

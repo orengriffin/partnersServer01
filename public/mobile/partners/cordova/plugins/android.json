@@ -1,0 +1,15 @@
+{
+    "prepare_queue": {
+        "installed": [],
+        "uninstalled": [
+            {
+                "plugin": "org.apache.cordova.geolocation",
+                "id": "org.apache.cordova.geolocation",
+                "topLevel": true
+            }
+        ]
+    },
+    "config_munge": {},
+    "installed_plugins": {},
+    "dependent_plugins": {}
+}

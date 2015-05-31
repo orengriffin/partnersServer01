@@ -1,0 +1,15 @@
+{
+    "prepare_queue": {
+        "installed": [
+            {
+                "plugin": "de.phonostar.softkeyboard-custom",
+                "vars": {},
+                "topLevel": true
+            }
+        ],
+        "uninstalled": []
+    },
+    "config_munge": {},
+    "installed_plugins": {},
+    "dependent_plugins": {}
+}

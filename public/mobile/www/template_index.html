@@ -1,0 +1,83 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="msapplication-tap-highlight" content="no" />
+        <!-- WARNING: for iOS 7, remove the width=device-width and height=device-height attributes. See https://issues.apache.org/jira/browse/CB-4323 -->
+        <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, target-densitydpi=device-dpi" />
+        <!-- Style Links -->
+        <link rel="stylesheet" type="text/css" href="resources/css/normalize.css" />
+        <link rel="stylesheet" type="text/css" href="resources/css/fonts.css" />
+        <link rel="stylesheet" type="text/css" href="resources/css/app.css" />
+        
+        <title>Partners App v1.0</title>
+    </head>
+    <body ng-app="Partners">
+        <div class="app" ng-controller="MainController">
+            <div class="root-wrapper">
+
+            	<div class="signin-page">
+            		<div class="images-collage">
+
+            		</div>
+            		<!-- Location Description -->
+            		<div class="images-description">
+            			<span>You Have 15 Partners Around You!</span>
+            		</div>
+            		<!-- Logo -->
+            		<figure>
+            			<img src="resources/images/signin_logo.png" />
+            		</figure>
+            		<!-- Button -->
+            		<button>
+            			<div class="facebook-icon">
+            				<img src="resources/images/facebook-icon.png" />
+            			</div>
+            			<span>Login Using Facebook</span>
+            		</button>
+            		<!-- Note -->
+            		<div class="note">We Would NEVER Post on Your Behalf</div>
+
+            	</div>
+
+
+
+            </div>
+        </div>
+        
+        <!-- Scripts -->
+        
+        <script type="text/javascript" src="resources/js/jquery-1.11.1.min.js"></script>
+       
+       <script type="text/javascript">
+			$(document).ready(function() {
+				$('.signin-page').children().css('margin-top', 0).addClass('slide-in');
+				$('.signin-page>*').css('display', 'block');
+
+				window.idan = undefined;
+
+				$.ajax({url: 'http://partners.local/getPreLoginSettings'}).success(function(d){
+
+					idan = JSON.parse(d);
+					console.log(idan);
+					counter = 0;
+
+					$.each(idan.message.login_images, function(index, element) {
+						
+						$('.images-collage').append($('<div>').addClass('signin-collage-image').addClass('signin-collage-image-' + counter).append($('<img>').attr('src', element.image + '?type=large').css('display', 'none').load(function() {
+							$(this).show().css('opacity', 1);
+						})));
+
+						console.log(element);
+						counter++;
+
+					});
+				});
+			});
+
+     	</script>
+        <!-- Insert -->
+        
+    </body>
+</html>

@@ -1,0 +1,118 @@
+.main-page .group 			  {
+    position:relative;
+    /* margin-bottom:45px; */
+    left: -2%;
+}
+.main-page .location-or-nav {
+    float:left;
+    color: white;
+    font-size: 1.5em;
+    display: inline-block;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%) scaleX(-1);
+
+    left: 12%;
+    z-index: 100;
+}
+.main-page input 				{
+    font-size:18px;
+    /* float: left; */
+    padding: 7px 6px 7px 30px;
+    display: inline;
+    /* top: 9px; */
+    margin-top: 7px;
+    width: 50%;
+    border:none;
+    border-bottom: 1px solid #FFFFFF;
+    background-color: rgba(255, 130, 73, 1);
+    color: white;
+    position: absolute;
+    /* margin-left: 14px; */
+    left: 12%;
+    -webkit-appearance: none;
+    border-radius: 0px;
+}
+.main-page input:focus 		{ outline:none; }
+
+/* LABEL ======================================= */
+.main-page label 				 {
+    opacity:1;
+    color: #FFF;
+    font-size:18px;
+    font-weight:normal;
+    position:absolute;
+    pointer-events:none;
+    left: 21%;
+    top: 18px;
+    /* transition:0.2s ease all; */
+    -moz-transition:0.2s ease all;
+    -webkit-transition:0.2s ease all;
+    font-family: 'Helvetica Neue';
+    /* font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; */
+}
+
+/* active state */
+.main-page input:focus ~ label/*, .main-page input:valid ~ label */		{
+    /* top:-20px;
+     font-size:14px;
+     color:#5264AE;*/
+    opacity:0;
+}
+
+/* BOTTOM BARS ================================= */
+.main-page .bar 	{ position: absolute; display:block; width: 100%; box-sizing: border-box; top: 47px; left: 14%;}
+.main-page .bar:before, .main-page .bar:after 	{
+    content:'';
+    height:2px;
+    width:0;
+    bottom:1px;
+    position:absolute;
+    background: rgba(255,255,255,0.8);
+    transition:0.2s ease all;
+    -moz-transition:0.2s ease all;
+    -webkit-transition:0.2s ease all;
+}
+.main-page.bar:before {
+    left:50%;
+}
+.main-page .bar:after {
+    right:50%;
+}
+
+/* active state */
+.main-page input:focus ~ .bar:before,.main-page input:focus ~ .bar:after {
+    width: 56%;
+}
+
+/* HIGHLIGHTER ================================== */
+.main-page .highlight {
+    position:absolute;
+    height:60%;
+    width: 41px;
+    top: 49px;
+    left:0;
+    pointer-events:none;
+    opacity:0.5;
+}
+
+/* active state */
+.main-page input:focus ~ .highlight {
+    -webkit-animation:inputHighlighter 0.3s ease;
+    -moz-animation:inputHighlighter 0.3s ease;
+    animation:inputHighlighter 0.3s ease;
+}
+
+/* ANIMATIONS ================ */
+@-webkit-keyframes inputHighlighter {
+    from { background:#5264AE; }
+    to 	{ width:0; background:transparent; }
+}
+@-moz-keyframes inputHighlighter {
+    from { background:#5264AE; }
+    to 	{ width:0; background:transparent; }
+}
+@keyframes inputHighlighter {
+    from { background:#5264AE; }
+    to 	{ width:0; background:transparent; }
+}
