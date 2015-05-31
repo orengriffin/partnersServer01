@@ -107,9 +107,9 @@ app.use('/admin', function (req, res, next) {
 });
 */
 
-app.use('/', express.static(__dirname + '/public/web'));
+app.use(express.static('public/web'));
 
-app.use(express.static('checkLogin'));
+//app.use(express.static('checkLogin'));
 
 
 //app.listen(3456);
