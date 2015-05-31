@@ -9,19 +9,12 @@ var fs = require ('fs');
 var pub = require ('./pub');
 var sendMail = require ('./sendMail');
 var async = require ('async');
+var r = require('./route');
+var ejs = require('ejs');
+
 
 
 // router
-
-var chat = require('./router/chat');
-var migrate = require('./router/migrate');
-var user = require('./router/user');
-var activity = require('./router/activity');
-var settings = require('./router/settings');
-var pubRouter = require('./router/pubRouter');
-var login = require('./router/login');
-var prelogin = require('./router/prelogin');
-
 
 var uristring =
     process.env.MONGOLAB_URI;
@@ -29,7 +22,7 @@ var uristring =
 app.use(bodyParser.urlencoded({extended: false}));
 
 
-var pagesLoaded = 0;
+var fbid = '';
 
 fs.readFile (__dirname + '/credentials.json', function (err, data) {
     var credentials = JSON.parse(data.toString());
@@ -39,6 +32,9 @@ fs.readFile (__dirname + '/credentials.json', function (err, data) {
         pub.setKeys(credentials.pub.publish_key , credentials.pub.subscribe_key);
         sendMail.setKeys(credentials.sendgrid.password, credentials.sendgrid.username);
     }
+
+    fbid = credentials.fbid || process.env.FBID;
+
     mongoose.connect(uristring, function (err, res) {
         if (err) {
             console.log('ERROR connecting to: ' + uristring + '. ' + err);
@@ -48,71 +44,16 @@ fs.readFile (__dirname + '/credentials.json', function (err, data) {
         }
     });
 });
-/*
-async.parallel({
-    html : function (callback) {
-            fs.readFile (__dirname + '/boughtTemplate.html', function (err, data) {
-                if (!err)
-                {
-                    sendMail.setTemplate(data.toString());
-                    callback();
-                }
-            });
 
-    }//,
-*/
-/*
-    css : function (callback) {
-            fs.readFile (__dirname + '/style.css', function (err, data) {
-                if (!err)
-                {
-                    sendMail.setCss(data.toString());
-                    callback();
-                }
-            });
+app.use(express.static('public/'));
+app.set('views', 'public');
+app.set('view engine', 'ejs');
 
-    }
-*//*
-
-}, function () {
-    sendMail.init();
+app.get('/', function (req, res) {
+    res.render('index.ejs', {fbid:fbid});
 });
-*/
-
-/*
-
-app.use('/admin', function (req, res, next) {
-    var paramsReceived = req.query;
-    if (paramsReceived.token) {
-        if (paramsReceived.token == utils.token.get()) {
-            utils.token.isLoading = true;
-            return next();
-        }
-        else
-            res.redirect('/');
-    }
-
-    if (utils.token.isLoading) {
-        pagesLoaded++;
-        console.log(pagesLoaded);
-        utils.token.theToken = null;
-        if (pagesLoaded == 35) {
-            console.log('Admin Page Loaded');
-            pagesLoaded = 0;
-            utils.token.isLoading = false;
-        }
-        return next();
-    }
-    return res.end();
-});
-*/
-
-app.use(express.static('public/web'));
-
-//app.use(express.static('checkLogin'));
 
 
-//app.listen(3456);
 app.set('port', process.env.PORT || 3010);
 
 app.all('*', function (req, res, next) {
@@ -139,17 +80,8 @@ mongodb.once('open', function () {
     db.init(this.base);
 });
 
-//    routing
-
-app.use('/migrate/', migrate);
-app.use('/user/', user);
-app.use('/settings/', settings);
-app.use('/chat/', chat);
-app.use('/activity/', activity);
-app.use('/pub/', pubRouter);
-app.use('/login/', login);
-app.use('/getPreLoginSettings/', prelogin);
-
+r.route(app, ['migrate', 'user', 'settings', 'chat', 'activity', 'login',
+    ['pub', 'pubRouter'], ['getPreLoginSettings', 'prelogin' ]]);
 //
 
 server = app.listen(app.get('port'), function () {
