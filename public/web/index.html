@@ -1,0 +1,150 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <!-- WARNING: for iOS 7, remove the width=device-width and height=device-height attributes. See https://issues.apache.org/jira/browse/CB-4323 -->
+    <meta name="viewport" content="height=device-height,width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+    <!-- Style Links -->
+    <link rel="stylesheet" type="text/css" href="../mobile/www/resources/css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../mobile/www/resources/css/fonts.css" />
+    <link rel="stylesheet" type="text/css" href="../mobile/www/resources/css/icon/flaticon.css" />
+    <link rel="stylesheet" type="text/css" href="../mobile/www/resources/js/progressBar/nprogress.css" />
+    <!--<link rel="stylesheet" type="text/css" href="../mobile/www/resources/css/jquery-ui.structure.css" />-->
+    <!--<link rel="stylesheet" type="text/css" href="../mobile/www/resources/css/jquery-ui.theme.css" />-->
+    <link rel="stylesheet" type="text/css" href="../mobile/www/resources/css/app.css" />
+    <link rel="stylesheet" type="text/css" href="../mobile/www/resources/css/icons.css" />
+    <link rel="stylesheet" type="text/css" href="../mobile/www/resources/css/input.css" />
+    <!--<link rel="stylesheet" type="text/css" href="../mobile/www/resources/css/googleSpinner.css" />-->
+    <link rel="stylesheet" type="text/css" href="../mobile/www/resources/css/loader.css" />
+    <!--<link rel="stylesheet" href="jquery.mobile-1.4.5.css">-->
+
+    <title>Partners App v1.2</title>
+</head>
+<body ng-app="Partners">
+<div class="app" ng-controller="MainController">
+    <div class="root-wrapper"></div>
+
+    <!--Report-->
+    <div class="confirm-box">
+        <span></span>
+        <div class="buttons">
+            <button id="confirm-no">No</button>
+            <button id="confirm-yes">Yes</button>
+        </div>
+    </div>
+    <!-- Alert -->
+    <header id="orange" class = "fadeMe-later"></header>
+    <div class="alert-box">
+        <span></span>
+        <div class="buttons">
+            <button>OK</button>
+        </div>
+    </div>
+    <!-- Pop up -->
+    <div class="Popup-msg">
+        <span></span>
+    </div>
+    <!-- Input Box -->
+    <div class="input-box">
+        <span></span>
+        <input type="text" id="input-dox-field" />
+        <div class="buttons">
+            <button id="input-ok">OK</button>
+        </div>
+    </div>
+    <!-- Curtain -->
+    <div class="popup_curtain"></div>
+    <!-- Location Error Message -->
+    <div class="location-error-msg">
+        <p>"Partners App" Requires Available Location Services. Please Turn on Your Location Services. Navigate to </p>
+        <p><strong>"Settings" > "Privacy" > "Location Services"</strong></p><p>and Switch On Next to Partners App Icon.</p>
+    </div>
+    <!-- Loader Element -->
+    <div class="loader-mask" id="loader">Loading...</div>
+    <div class="loader-mask" id="gps">Getting Gps Coordinates...</div>
+    <img class="default-loader" src="../mobile/www/resources/images/landig_loader.png" >
+</div>
+
+<!-- Scripts -->
+<!--<script src="http://192.168.1.16:8080/target/target-script-min.js"></script>-->
+<!--<script type="text/javascript" src="debuggap.js" ></script>-->
+<!--<script type="text/javascript" src="socket.io-1.2.1.js"></script>-->
+<!--<script type="text/javascript" src="../mobile/www/resources/js/progressBar/nprogress.js"></script>-->
+<!--<script type="text/javascript" src="../mobile/www/cordova.js"></script>-->
+<script type="text/javascript" src="../mobile/www/resources/js/utils/fastClick.js"></script>
+<!--<script type="text/javascript" src="../mobile/www/resources/js/controllers/PushNotification.js"></script>-->
+<!--<script type="text/javascript" src="../mobile/www/resources/js/jquery-1.11.1.min.js"></script>-->
+<script type="text/javascript" src="../mobile/www/jquery-2.1.0.min.js"></script>
+<script type="text/javascript" src="../mobile/www/jquery.mobile-1.4.5.min.js"></script>
+<script type="text/javascript" src="../mobile/www/fabricatedResponse.js"></script>
+
+<script type="text/javascript" src="../mobile/www/resources/js/angular.min.js"></script>
+<script type="text/javascript" src="../mobile/www/pubnub.min.js"></script>
+<script type="text/javascript" src="../mobile/www/velocity.min.js"></script>
+<script type="text/javascript" src="../mobile/www/velocity.ui.min.js"></script>
+<script type="text/javascript" src="../mobile/www/jquery.lazyload.min.js"></script>
+<script type="text/javascript" src="../mobile/www/iscroll-lite.js"></script>
+<!--<script type="text/javascript" src="iscroll-probe.js"></script>-->
+<!--<script type="text/javascript" src="jquery.ripple.js"></script>-->
+<!--<script type="text/javascript" src="jquery.finger.min.js"></script>-->
+
+<!-- Insert -->
+<script type="text/javascript" src="../mobile/www/resources/js/config/base.js"></script>
+<script type="text/javascript" src="../mobile/www/resources/js/controllers/location_controller.js"></script>
+<script type="text/javascript" src="../mobile/www/resources/js/controllers/media.js"></script>
+<script type="text/javascript" src="../mobile/www/resources/js/utils/string.js"></script>
+<script type="text/javascript" src="../mobile/www/resources/js/utils/date.js"></script>
+<script type="text/javascript" src="../mobile/www/resources/js/controllers/storage.js"></script>
+<script type="text/javascript" src="../mobile/www/resources/js/utils/jquery.textarea_autosize.min.js"></script>
+<script type="text/javascript" src="../mobile/www/resources/js/utils/buildVC.js"></script>
+
+<!-- Pages -->
+<script type="text/javascript" src="../mobile/www/resources/js/controllers/prelogin_page.js"></script>
+<script type="text/javascript" src="../mobile/www/resources/js/controllers/search_page.js"></script>
+<script type="text/javascript" src="../mobile/www/resources/js/controllers/result_page.js"></script>
+<script type="text/javascript" src="../mobile/www/resources/js/controllers/chat_page.js"></script>
+<script type="text/javascript" src="../mobile/www/resources/js/controllers/connect_page.js"></script>
+<script type="text/javascript" src="../mobile/www/resources/js/controllers/settings_page.js"></script>
+<script type="text/javascript" src="../mobile/www/resources/js/controllers/contactus_page.js"></script>
+
+<!-- Controllers -->
+<script type="text/javascript" src="../mobile/www/resources/js/models/user_model.js"></script>
+<script type="text/javascript" src="../mobile/www/resources/js/controllers/draw_controller.js"></script>
+<script type="text/javascript" src="../mobile/www/resources/js/controllers/main_controller.js"></script>
+<script type="text/javascript" src="controllers/facebookWeb.js"></script>
+<script type="text/javascript" src="../mobile/www/resources/js/pub.js"></script>
+<script type="text/javascript" src="../mobile/www/resources/js/app.js"></script>
+<script type="text/javascript" src="web.js"></script>
+<script type="text/javascript" src="fbid.js"></script>
+
+<script>
+    (function(d, s, id) {
+        var js, fjs = d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)) return;
+        js = d.createElement(s); js.id = id;
+        js.src = "//connect.facebook.net/en_US/sdk.js";
+        fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'facebook-jssdk'));
+
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-55895213-2', 'auto');
+    ga('send', 'pageview');
+
+    var device = {
+        platform : 'web'
+    };
+    $(document).ready(function () {
+        noLoading();
+        fbController.init();
+        onDeviceReady();
+    })
+</script>
+</body>
+</html>

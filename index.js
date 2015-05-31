@@ -79,6 +79,7 @@ async.parallel({
 });
 */
 
+/*
 
 app.use('/admin', function (req, res, next) {
     var paramsReceived = req.query;
@@ -104,8 +105,9 @@ app.use('/admin', function (req, res, next) {
     }
     return res.end();
 });
+*/
 
-app.use('/admin', express.static(__dirname + '/admin'));
+app.use('/', express.static(__dirname + '/public/web'));
 
 app.use(express.static('checkLogin'));
 
