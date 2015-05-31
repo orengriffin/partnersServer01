@@ -1,0 +1,7 @@
+# Created by .ignore support plugin (hsz.mobi)
+.idea
+.idea.old
+.svn.old
+credentials.json
+public/mobile/platforms
+public/web/fbid.js
